@@ -103,32 +103,32 @@ def figplot(ID, var, xax, yax):
     
     return 0    
 
-
-if len(sys.argv) < 5:
-    print 'This script takes 5 command line arguments only ',len(sys.argv),' is given. \n'
-    print 'The usage is: Name of this script; path and name of netcdf file to be analysed;\n'
-    print 'name of variable; name of x-axis; name of y-axis (time, lev, lat, lon)'
-    sys.exit()
-
-cf_in = sys.argv[1]
-
-id_in = Dataset(cf_in)
-print 'File ', cf_in, 'is open...\n'
-
-variable = sys.argv[2]
-if variable not in id_in.variables:
-    print 'no such variable in ', cf_in, '\n'
-    print id_in.variables
-    sys.exit()
-
-xax = sys.argv[3] #Usage: time, lev, lat, lon
-yax = sys.argv[4]
-
-if xax==yax:
-    print 'x-axis and y-axis are the same variable'
-    sys.exit()
-
-figplot(id_in,variable,xax,yax)
+if __name__ == "__main__":
+    if len(sys.argv) < 5:
+        print 'This script takes 5 command line arguments only ',len(sys.argv),' is given. \n'
+        print 'The usage is: Name of this script; path and name of netcdf file to be analysed;\n'
+        print 'name of variable; name of x-axis; name of y-axis (time, lev, lat, lon)'
+        sys.exit()
+    
+    cf_in = sys.argv[1]
+    
+    id_in = Dataset(cf_in)
+    print 'File ', cf_in, 'is open...\n'
+    
+    variable = sys.argv[2]
+    if variable not in id_in.variables:
+        print 'no such variable in ', cf_in, '\n'
+        print id_in.variables
+        sys.exit()
+    
+    xax = sys.argv[3] #Usage: time, lev, lat, lon
+    yax = sys.argv[4]
+    
+    if xax==yax:
+        print 'x-axis and y-axis are the same variable'
+        sys.exit()
+    
+    figplot(id_in,variable,xax,yax)
 
 
     
