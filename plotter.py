@@ -88,9 +88,13 @@ def figplot(ID, var, xax, yax):
         mP = transpose(mP)
         print 'Shapes were unequal, so variable is transposed. New shape ', shape(mP)
     
-    norm = MidpointNormalize(midpoint=0)
-    CF = contourf(x,y,mP,linspace(nmp.amin(mP),nmp.amax(mP),1000),norm=norm,cmap='seismic')    
-    CS=contour(x, y, mP,10,colors='k')
+    if var == 'O3':
+        CF = contourf(x,y,mP,10)
+        CS=contour(x, y, mP,10,colors='k')
+    else:
+        norm = MidpointNormalize(midpoint=0)
+        CF = contourf(x,y,mP,linspace(nmp.amin(mP),nmp.amax(mP),1000),norm=norm,cmap='seismic')    
+        CS=contour(x, y, mP,10,colors='k')
     
     axis([min(x), max(x), max(y), min(y)])
     xlabel(xunits); ylabel(yunits);
