@@ -48,12 +48,9 @@ def figplot(ID, var, xax, yax):
     xunits = id_in.variables[xax].units
     yunits = id_in.variables[yax].units
     
-    
     if yax == 'lev':
         xis.set_yscale("log")
 
-       
-    
     ax = [0,1,2,3]    
     
     if xax == 'time':
@@ -87,8 +84,11 @@ def figplot(ID, var, xax, yax):
     if shape(xx) != shape(mP):
         mP = transpose(mP)
         print 'Shapes were unequal, so variable is transposed. New shape ', shape(mP)
+        if shape(xx) != shape(mP):
+            print 'Shapes still unequal. Exiting...'
+            sys.exit()
     
-    if var == 'O3':
+    if var == 'O3' or var == 'T':
         CF = contourf(x,y,mP,10)
         CS=contour(x, y, mP,10,colors='k')
     else:
