@@ -29,14 +29,7 @@ class MidpointNormalize(Normalize):
         x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
         return np.ma.masked_array(np.interp(value, x, y))
         
-def figplot(ID, var, xax, yax):
-
-    fig = figure(num = 1, figsize=(10.,5.), dpi=None, facecolor='w', edgecolor='k')
-
-    wo = 0.95 ; # width occupation for each figure (fraction)    
-    
-    xis = axes([0.09,  0.1,   0.85,       0.82], axisbg = 'white')
-    
+def ExtractVariables(ID,var,xax,yax):
     x = id_in.variables[xax][:] ; # extracting x axis variable 1d
     xl = size(x)
     print shape(x)
@@ -48,8 +41,7 @@ def figplot(ID, var, xax, yax):
     xunits = id_in.variables[xax].units
     yunits = id_in.variables[yax].units
     
-    if yax == 'lev':
-        xis.set_yscale("log")
+
 
     ax = [0,1,2,3]    
     
@@ -75,7 +67,25 @@ def figplot(ID, var, xax, yax):
     
     P = id_in.variables[var][:,:,:,:] ; # extracting 4D variable "var" (3D+T field) P=generic
     Punits = id_in.variables[var].units
-    #embed()
+#    embed()
+    return x,y,P,Punits,ax,xunits,yunits
+
+def figplot(ID, var, xax, yax):
+
+    fig = figure(num = 1, figsize=(10.,5.), dpi=None, facecolor='w', edgecolor='k')
+
+    wo = 0.95 ; # width occupation for each figure (fraction)    
+    
+    xis = axes([0.09,  0.1,   0.85,       0.82], axisbg = 'white')
+    
+    P=None;x=None;y=None;Punits=None;ax=None;xunits=None;yunits=None;
+    
+    if yax == 'lev':
+        xis.set_yscale("log")
+    
+    x,y,P,Punits,ax,xunits,yunits=ExtractVariables(ID,var,xax,yax)
+    
+#    embed()
     mP = nmp.mean(nmp.mean(P[:,:,:,:],axis=ax[1]),axis=ax[0])
     print 'Shape of averaged variable array for plotting is',shape(mP)
     
@@ -102,6 +112,7 @@ def figplot(ID, var, xax, yax):
     #clabel(CS,inline=1,fontsize=8)
     
     savefig(cf_in+var+xax+yax+'.png', dpi=100, facecolor='w', edgecolor='w', orientation='portrait')
+    print cf_in+var+xax+yax+'.png was saved' 
 
     close(fig)    
     
@@ -112,9 +123,10 @@ def bandplot(ID, var, xax, yax,):
     return 0
     
 def pointplot(ID, var, xax, yax,p1,p2):
-    
+    return 0
 
 if __name__ == "__main__":
+    avgall=False; bandavg=False; point=False;
     if len(sys.argv) < 5:
         print 'This script takes at least 5 command line arguments ',len(sys.argv),' is given. \n'
         print 'The usage is: Name of this script; path and name of netcdf file to be analysed;\n'
