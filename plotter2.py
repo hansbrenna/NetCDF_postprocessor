@@ -40,8 +40,6 @@ def ExtractVariables(ID,var,xax,yax):
     
     xunits = id_in.variables[xax].units
     yunits = id_in.variables[yax].units
-    
-
 
     ax = [0,1,2,3]    
     
