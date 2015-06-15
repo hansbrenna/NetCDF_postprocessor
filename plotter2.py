@@ -9,6 +9,8 @@ Created on Wed Jun 03 16:03:10 2015
 from __future__ import print_function
 import sys
 import numpy as nmp
+import matplotlib
+matplotlib.use('Agg')
 from mpl_toolkits.basemap import Basemap
 import matplotlib
 from matplotlib.pylab import *
@@ -20,7 +22,7 @@ import seaborn as sns
 
 from IPython import embed
 
-sns.set(style="dark")
+sns.set(style="white")
 
 def find_nearest(array,value):
     idx = (nmp.abs(array-value)).argmin()
@@ -93,15 +95,18 @@ def plotfunc(var,mP,x,y,xunits,yunits,Punits):
             print( 'Shapes still unequal. Exiting...')
             sys.exit()
     
-    if var == 'O3' or var == 'T':
-        CF = contourf(x,y,mP,10,cmap=matplotlib.cm.copper)
+    if var == 'O3':
+        CF = contourf(x,y,mP,10,cmap=matplotlib.cm.jet)
         CS=contour(x, y, mP,10,colors='k')
+    elif var == 'T':
+        CF = contourf(x,y,mP,linspace(nmp.amin(mP),400,10),cmap=matplotlib.cm.jet)
+        CS=contour(x, y, mP,linspace(nmp.amin(mP),400,10),colors='k')
     else:
         norm = MidpointNormalize(midpoint=0)
         CF = contourf(x,y,mP,linspace(nmp.amin(mP),nmp.amax(mP),1000),norm=norm,cmap='seismic')    
         CS=contour(x, y, mP,10,colors='k')
     
-    axis([min(x), max(x), max(y), min(y)])
+    axis([min(x), max(x), min(y), max(y)])
     xlabel(xunits); ylabel(yunits);
     clb = colorbar(CF); clb.set_label('('+Punits+')')
     #clabel(CS,inline=1,fontsize=8)
@@ -117,8 +122,6 @@ def figplot(ID, var, xax, yax):
     
     P=None;x=None;y=None;Punits=None;ax=None;xunits=None;yunits=None;
     
-    if yax == 'lev':
-        xis.set_yscale("log")
     
     x,y,P,Punits,ax,xunits,yunits=ExtractVariables(ID,var,xax,yax)
     
@@ -128,6 +131,10 @@ def figplot(ID, var, xax, yax):
     
     fig = figure(num = 1, figsize=(10.,5.), dpi=None, facecolor='w', edgecolor='k')
     plotfunc(var,mP,x,y,xunits,yunits,Punits)
+    
+    if yax == 'lev':
+        xis.set_yscale("log")
+        axis([nmp.amin(x), nmp.amax(x),nmp.amax(y),2e-5])
     
     savefig(cf_in+var+xax+yax+'.png', dpi=100, facecolor='w', 
             edgecolor='w', orientation='portrait')
