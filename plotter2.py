@@ -208,7 +208,7 @@ def pointplot(ID, var, xax, yax,dim1,p1,dim2,p2):
     
     savefig('{0}{1}{2}{3}_point_{4}={5:2.3f}{6}={7:2.3f}.png'.format(cf_in,var,xax,yax,dim1,nearest1,dim2,nearest2),
             dpi=100, facecolor='w', edgecolor='w', orientation='portrait')
-    print( cf_in+var+xax+yax+'.png was saved' )
+    print( '{0}{1}{2}{3}_point_{4}={5:2.3f}{6}={7:2.3f}.png was saved'.format(cf_in,var,xax,yax,dim1,nearest1,dim2,nearest2) )
 
     close(fig)   
     return 0
