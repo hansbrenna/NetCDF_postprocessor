@@ -10,7 +10,7 @@ from __future__ import print_function
 import sys
 import numpy as nmp
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 from mpl_toolkits.basemap import Basemap
 import matplotlib
 from matplotlib.pylab import *
@@ -75,6 +75,7 @@ def ExtractVariables(ID,var,xax,yax):
     
     P = id_in.variables[var][:,:,:,:] ; # extracting 4D variable "var" (3D+T field) P=generic
     Punits = id_in.variables[var].units
+    Pname = id_in.variables[var].name
 #    embed()
     return x,y,P,Punits,ax,xunits,yunits
     
