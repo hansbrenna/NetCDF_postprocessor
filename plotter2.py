@@ -155,9 +155,6 @@ def bandplot(ID, var, xax, yax,dim,dmin,dmax):
     print( nmin)
     nmax = find_nearest(d2,dmax)
     print( nmax)
-    
-    
-
     return 0
     
 def pointplot(ID, var, xax, yax,dim1,p1,dim2,p2):
