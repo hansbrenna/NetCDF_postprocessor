@@ -18,8 +18,8 @@ def read_data(id_in):
     return data
     
 def modify_data(ds,le,la,lo,value):
-    ds.HCL[dict(lat=la,lon=lo,lev=le)]=ds.HCL[dict(lat=la,lon=lo,lev=le)]*2
-    ds.HBR[dict(lat=la,lon=lo,lev=le)]=ds.HBR[dict(lat=la,lon=lo,lev=le)]*2
+    ds.HCL[dict(lat=la,lon=lo,lev=le)]=ds.HCL[dict(lat=la,lon=lo,lev=le)]*100
+    ds.HBR[dict(lat=la,lon=lo,lev=le)]=ds.HBR[dict(lat=la,lon=lo,lev=le)]*100
     return ds
     
 
@@ -32,8 +32,15 @@ print(ds.HCL[dict(lat=la,lon=lo,lev=le)].values)
 ds=modify_data(ds,le,la,lo,value)
 print(ds.HCL[dict(lat=la,lon=lo,lev=le)].values)
 
-ds.to_netcdf(path='{0}/modified/{1}'.format(case_id[0],case_id[1]),mode='w',)
-f1=open('{0}/modified/{1}_README'.format(case_id[0],case_id[1]),'a')
+if 'modified' in case_id[0] or 'modified' in case_id[1]:
+    ds.to_netcdf(path='{0}/modified/{1}'.format(case_id[0],case_id[2]),mode='w',)
+    f1=open('{0}/modified/{1}_README'.format(case_id[0],case_id[2]),'a')
+    print( 'a')
+else:
+    ds.to_netcdf(path='{0}/modified/{1}'.format(case_id[0],case_id[1]),mode='w',)
+    f1=open('{0}/modified/{1}_README'.format(case_id[0],case_id[1]),'a')
+    print( 'b')
+
 print('file {0}/modified/{1} has been modified by program restart_file_modifier.py'.format(case_id[0],case_id[1]),file=f1)
 print('The changes take effect at lev={0}, lat={1}, lon={2} and the changed values are HCL={3} and HBR={4}'.format(le,la,lo,ds.HCL[dict(lat=la,lon=lo,lev=le)].values,ds.HBR[dict(lat=la,lon=lo,lev=le)].values),file=f1)
 f1.close()
