@@ -97,8 +97,8 @@ def plotfunc(var,mP,x,y,xunits,yunits,Punits):
             sys.exit()
     
     if var == 'O3':
-        CF = contourf(x,y,mP,10,cmap=matplotlib.cm.jet)
-        CS=contour(x, y, mP,10,colors='k')
+        CF = contourf(x,y,mP,1000,cmap=matplotlib.cm.jet)
+        #CS=contour(x, y, mP,10,colors='k')
     elif var == 'T':
         CF = contourf(x,y,mP,linspace(nmp.amin(mP),400,10),cmap=matplotlib.cm.jet)
         CS=contour(x, y, mP,linspace(nmp.amin(mP),400,10),colors='k')
