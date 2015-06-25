@@ -110,9 +110,11 @@ if __name__=='__main__':
             plotter(vm,x,y)
             
             if yvar == 'lev':
+                print('log=True')
                 xis.set_yscale("log")
             savefig(savestring,dpi=100, facecolor='w', edgecolor='w', orientation='portrait')
             print('again')
             close(fig)
+            del(ds)
         
     
