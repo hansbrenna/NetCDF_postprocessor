@@ -136,7 +136,8 @@ def figplot(ID, var, xax, yax):
     if yax == 'lev':
         xis.set_yscale("log")
         axis([nmp.amin(x), nmp.amax(x),nmp.amax(y),2e-5])
-    
+    elif yax == 'time'
+        axis([nmp.amin(x), nmp.amax(x),nmp.amax(y),nmp.amin(y)])
     savefig(cf_in+var+xax+yax+'.png', dpi=100, facecolor='w', 
             edgecolor='w', orientation='portrait')
     print("{0}.png was {1:2.3f} saved".format(cf_in+var+xax+yax,1.52248621))
