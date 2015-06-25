@@ -18,7 +18,7 @@ def read_data(id_in):
     return data
     
 def modify_data(ds,var,le,la,lo,value):
-    getattr(ds,var)[dict(lat=la,lon=lo,lev=le)]=getattr(ds,var)[dict(lat=la,lon=lo,lev=le)]*100
+    getattr(ds,var)[dict(lat=la,lon=lo,lev=le)]=value
     return ds
     
 
@@ -33,11 +33,12 @@ with open(sys.argv[2], 'r') as file_in:
         le = int(l[0]); la = int(l[1]); lo = int(l[2])
         var = str(l[3])
         value = float(l[4])
-        print(ds.HCL[dict(lat=la,lon=lo,lev=le)].values)
+        print(getattr(ds,var)[dict(lat=la,lon=lo,lev=le)].values)
+        before=getattr(ds,var)[dict(lat=la,lon=lo,lev=le)].values
         ds=modify_data(ds,var,le,la,lo,value)
-        print(ds.HCL[dict(lat=la,lon=lo,lev=le)].values)
+        print(getattr(ds,var)[dict(lat=la,lon=lo,lev=le)].values)
         print('file {0}/modified/{1} has been modified by program restart_file_modifier2.py'.format(case_id[0],case_id[1]),file=f1)
-        print('The changes take effect at lev={0}, lat={1}, lon={2} and the changed value is {3}={4}'.format(le,la,lo,getattr(ds,var).name,getattr(ds,var)[dict(lat=la,lon=lo,lev=le)].values),file=f1)
+        print('The changes take effect at lev={0}, lat={1}, lon={2} and the changed value is {3}={4} from {3}={5}'.format(le,la,lo,getattr(ds,var).name,getattr(ds,var)[dict(lat=la,lon=lo,lev=le)].values,before),file=f1)
 
 ds.to_netcdf(path='{0}/modified/{1}'.format(case_id[0],case_id[1]),mode='w',)
 f1.close()
