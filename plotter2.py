@@ -11,7 +11,7 @@ import sys
 import numpy as nmp
 import matplotlib
 #matplotlib.use('Agg')
-#from mpl_toolkits.basemap import Basemap
+from mpl_toolkits.basemap import Basemap
 import matplotlib
 from matplotlib.pylab import *
 import matplotlib.colors as colors
@@ -95,20 +95,34 @@ def plotfunc(var,mP,x,y,xunits,yunits,Punits):
         if shape(xx) != shape(mP):
             print( 'Shapes still unequal. Exiting...')
             sys.exit()
-    
-    if var == 'O3':
-        CF = contourf(x,y,mP,1000,cmap=matplotlib.cm.jet)
-        #CS=contour(x, y, mP,10,colors='k')
-    elif var == 'T':
-        CF = contourf(x,y,mP,linspace(nmp.amin(mP),400,10),cmap=matplotlib.cm.jet)
-        CS=contour(x, y, mP,linspace(nmp.amin(mP),400,10),colors='k')
-    else:
-        norm = MidpointNormalize(midpoint=0)
-        CF = contourf(x,y,mP,linspace(nmp.amin(mP),nmp.amax(mP),1000),norm=norm,cmap='seismic')    
-        CS=contour(x, y, mP,10,colors='k')
-    
-    axis([min(x), max(x), min(y), max(y)])
-    xlabel(xunits); ylabel(yunits);
+    bmap = False
+    if xax == 'lon' and yax == 'lat':
+            map = Basemap(projection = 'cyl',llcrnrlat=-90,urcrnrlat=90,llcrnrlon=0,urcrnrlon=360,resolution='l')
+            bmap = True
+            map.drawcoastlines(linewidth=0.25)
+            meridians = map.drawmeridians(nmp.arange(0,360,30))
+            map.drawmeridians(meridians,labels=[0,0,0,1],fontsize=10)
+            parallels = map.drawparallels(nmp.arange(-80,81,20))
+            map.drawparallels(parallels,labels=[1,1,0,0],fontsize=10)
+
+            lons, lats = nmp.meshgrid(x,y)
+            mx,my = map(lons,lats)
+            CF = contourf(x,y,mP,1000,cmap=matplotlib.cm.jet)
+    if not bmap:
+        if var == 'O3':
+            CF = contourf(x,y,mP,10,cmap=matplotlib.cm.jet)
+            CS=contour(x, y, mP,10,colors='k')
+        elif var == 'T':
+            CF = contourf(x,y,mP,linspace(nmp.amin(mP),400,10),cmap=matplotlib.cm.jet)
+            CS=contour(x, y, mP,linspace(nmp.amin(mP),400,10),colors='k')
+        else:
+            norm = MidpointNormalize(midpoint=0)
+            CF = contourf(x,y,mP,linspace(nmp.amin(mP),nmp.amax(mP),1000),norm=norm,cmap='seismic')    
+            CS=contour(x, y, mP,10,colors='k')
+
+        axis([min(x), max(x), min(y), max(y)])
+        xlabel(xunits); ylabel(yunits);
+
     clb = colorbar(CF); clb.set_label('('+Punits+')')
     #clabel(CS,inline=1,fontsize=8)
     return
