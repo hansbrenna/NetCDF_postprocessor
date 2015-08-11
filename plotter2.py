@@ -18,11 +18,24 @@ import matplotlib.colors as colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import Normalize
 from netCDF4 import Dataset
-import seaborn as sns
+#import seaborn as sns
 
 from IPython import embed
 
-sns.set(style="white")
+print(matplotlib.matplotlib_fname())
+
+font = {'family' : 'sans-serif',
+        'weight' : 'normal',
+        'size'   : 18}
+
+rc('font', **font)
+
+matplotlib.rcParams['xtick.labelsize']=16
+matplotlib.rcParams['ytick.labelsize']=16
+matplotlib.rcParams['ytick.major.pad']=4
+
+
+#sns.set(style="white")
 
 def find_nearest(array,value):
     idx = (nmp.abs(array-value)).argmin()
@@ -86,6 +99,7 @@ def plotfunc(var,mP,x,y,xunits,yunits,Punits):
     wo = 0.95 ; # width occupation for each figure (fraction)    
     
     xis = axes([0.09,  0.1,   0.85,       0.82], axisbg = 'white')
+    #xis = axes([0.1,0.1,0.1,0.82], axisbg = 'white')
     
     xx,yy=nmp.meshgrid(x,y)
     print( 'Shape of meshgrid x and y axes is ',shape(xx), shape(yy))
@@ -109,7 +123,8 @@ def plotfunc(var,mP,x,y,xunits,yunits,Punits):
             mx,my = map(lons,lats)
             CF = contourf(x,y,mP,1000,cmap=matplotlib.cm.jet)
     if not bmap:
-        if var == 'O3':
+        gases = ['O3', 'CLO', 'BRO', 'HBR', 'HCL', 'CLY', 'BRY']
+        if var in gases:
             CF = contourf(x,y,mP,10,cmap=matplotlib.cm.jet)
             CS=contour(x, y, mP,10,colors='k')
         elif var == 'T':
@@ -121,17 +136,36 @@ def plotfunc(var,mP,x,y,xunits,yunits,Punits):
             CS=contour(x, y, mP,10,colors='k')
 
         axis([min(x), max(x), min(y), max(y)])
-        xlabel(xunits); ylabel(yunits);
-
-    clb = colorbar(CF); clb.set_label('('+Punits+')')
-    #clabel(CS,inline=1,fontsize=8)
+        if xax == 'lat':
+            xlabel('Latitude')
+        elif xax == 'lon':
+            xlabel('Longitude')
+        elif xax == 'lev':
+            xlabel('Pressure (hPa)')
+        elif xax == 'time':
+            xlabel('Time')
+        else:
+            xlabel('Error')
+        if yax == 'lat':
+            ylabel('Latitude')
+        elif yax == 'lon':
+            ylabel('Longitude')
+        elif yax == 'lev':
+            ylabel('Pressure (hPa)')
+        elif yax == 'time':
+            ylabel('Time')
+        else:
+            ylabel('Error')
+            
+        clb = colorbar(CF); clb.set_label('('+Punits+')')
+        #clabel(CS,inline=1,fontsize=8)
     return
       
 def figplot(ID, var, xax, yax):
 
-    fig = figure(num = 1, figsize=(10.,5.), dpi=None, facecolor='w', edgecolor='k')
+    fig = figure(num = 1, figsize=(9.,6.), dpi=None, facecolor='w', edgecolor='k')
 
-    wo = 0.95 ; # width occupation for each figure (fraction)    
+    wo = 1 ; # width occupation for each figure (fraction)    
     
     xis = axes([0.09,  0.1,   0.85,       0.82], axisbg = 'white')
     
@@ -144,7 +178,7 @@ def figplot(ID, var, xax, yax):
     mP = nmp.mean(nmp.mean(P[:,:,:,:],axis=ax[1]),axis=ax[0])
     print( 'Shape of averaged variable array for plotting is',shape(mP))
     
-    fig = figure(num = 1, figsize=(10.,5.), dpi=None, facecolor='w', edgecolor='k')
+    fig = figure(num = 1, figsize=(8.,4.5), dpi=None, facecolor='w', edgecolor='k')
     plotfunc(var,mP,x,y,xunits,yunits,Punits)
     
     if yax == 'lev':
@@ -208,7 +242,7 @@ def pointplot(ID, var, xax, yax,dim1,p1,dim2,p2):
     xP = squeeze(xP)
     print( xP.shape)
     
-    fig = figure(num = 1, figsize=(10.,5.), dpi=None, facecolor='w', edgecolor='k')
+    fig = figure(num = 1, figsize=(9.,6), dpi=None, facecolor='w', edgecolor='k')
 
     wo = 0.95 ; # width occupation for each figure (fraction)    
     
