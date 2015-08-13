@@ -123,21 +123,26 @@ def plotfunc(var,mP,x,y,xunits,yunits,Punits):
             mx,my = map(lons,lats)
             CF = contourf(x,y,mP,1000,cmap=matplotlib.cm.jet)
     if not bmap:
-        gases = ['O3', 'CLO', 'BRO', 'HBR', 'HCL', 'CLY', 'BRY']
-        if var in gases:
-            CF = contourf(x,y,mP,10,cmap=matplotlib.cm.jet)
-            CS=contour(x, y, mP,10,colors='k')
-        elif var == 'T':
-            CF = contourf(x,y,mP,linspace(nmp.amin(mP),400,10),cmap=matplotlib.cm.jet)
-            CS=contour(x, y, mP,linspace(nmp.amin(mP),400,10),colors='k')
+        gases = ['O3', 'CLO', 'BRO', 'HBR', 'HCL', 'CLY', 'BRY', 'CLOY', 'BROY', 'Z3']
+        if "anom" in cf_in:
+                norm = MidpointNormalize(midpoint=0)
+                CF = contourf(x,y,mP,linspace(nmp.amin(mP),nmp.amax(mP),1000),norm=norm,cmap='seismic')
+                CS=contour(x, y, mP,10,colors='k')
         else:
-            norm = MidpointNormalize(midpoint=0)
-            CF = contourf(x,y,mP,linspace(nmp.amin(mP),nmp.amax(mP),1000),norm=norm,cmap='seismic')    
-            CS=contour(x, y, mP,10,colors='k')
-
+            if var in gases:
+                CF = contourf(x,y,mP,10,cmap=matplotlib.cm.jet)
+                CS=contour(x, y, mP,10,colors='k')
+            elif var == 'T':
+                CF = contourf(x,y,mP,linspace(nmp.amin(mP),400,10),cmap=matplotlib.cm.jet)
+                CS=contour(x, y, mP,linspace(nmp.amin(mP),400,10),colors='k')
+            else:
+                norm = MidpointNormalize(midpoint=0)
+                CF = contourf(x,y,mP,linspace(nmp.amin(mP),nmp.amax(mP),1000),norm=norm,cmap='seismic')    
+                CS=contour(x, y, mP,10,colors='k')
         axis([min(x), max(x), min(y), max(y)])
         if xax == 'lat':
             xlabel('Latitude')
+            xticks(nmp.arange(min(x),max(x)+1.0,30))
         elif xax == 'lon':
             xlabel('Longitude')
         elif xax == 'lev':
@@ -157,13 +162,13 @@ def plotfunc(var,mP,x,y,xunits,yunits,Punits):
         else:
             ylabel('Error')
             
-        clb = colorbar(CF); clb.set_label('('+Punits+')')
+        clb = colorbar(CF,format='%.3e'); clb.set_label('('+Punits+')')
         #clabel(CS,inline=1,fontsize=8)
     return
       
 def figplot(ID, var, xax, yax):
 
-    fig = figure(num = 1, figsize=(9.,6.), dpi=None, facecolor='w', edgecolor='k')
+    fig = figure(num = 1, figsize=(10.,7.), dpi=None, facecolor='w', edgecolor='k')
 
     wo = 1 ; # width occupation for each figure (fraction)    
     
