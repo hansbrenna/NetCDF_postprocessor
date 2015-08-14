@@ -8,6 +8,7 @@ Created on Wed Jun 03 16:03:10 2015
 #Import required modules
 from __future__ import print_function
 import sys
+import os.path
 import numpy as nmp
 import matplotlib
 #matplotlib.use('Agg')
@@ -109,6 +110,29 @@ def plotfunc(var,mP,x,y,xunits,yunits,Punits):
         if shape(xx) != shape(mP):
             print( 'Shapes still unequal. Exiting...')
             sys.exit()
+
+    print('\n Cheking for rangefile for plotting ranges.dat in current dir...\n')            
+    if os.path.isfile('ranges.dat'):
+        print('Rangefile found, using ranges.dat')
+        with open('ranges.dat') as rangefile:
+            header = next(rangefile)
+            ranges = {}
+            for line in rangefile:
+                l=line.strip('\n').split(' ')
+                key=l[0]
+                rge = [l[1],l[2]]
+                ranges[key]=rge
+    else:
+        print('Rangefile not found using min and max of field as ranges')
+        ranges = {}
+            
+    if var in ranges.keys():
+        print('Current variable in rangefile')
+        minimum = ranges[var][0]; maximum=ranges[var][1]
+    else:
+        print('Current variable not found in rangefile, using default ranges')
+        minimum = nmp.amin(mP); maximum = nmp.amax(mP)
+        
     bmap = False
     if xax == 'lon' and yax == 'lat':
             map = Basemap(projection = 'cyl',llcrnrlat=-90,urcrnrlat=90,llcrnrlon=0,urcrnrlon=360,resolution='l')
@@ -124,21 +148,22 @@ def plotfunc(var,mP,x,y,xunits,yunits,Punits):
             CF = contourf(x,y,mP,1000,cmap=matplotlib.cm.jet)
     if not bmap:
         gases = ['O3', 'CLO', 'BRO', 'HBR', 'HCL', 'CLY', 'BRY', 'CLOY', 'BROY', 'Z3']
+                
         if "anom" in cf_in:
                 norm = MidpointNormalize(midpoint=0)
                 CF = contourf(x,y,mP,linspace(nmp.amin(mP),nmp.amax(mP),1000),norm=norm,cmap='seismic')
                 CS=contour(x, y, mP,10,colors='k')
         else:
             if var in gases:
-                CF = contourf(x,y,mP,10,cmap=matplotlib.cm.jet)
-                CS=contour(x, y, mP,10,colors='k')
+                CF = contourf(x,y,mP,linspace(minimum,maximum,10),cmap=matplotlib.cm.jet)
+                CS = contour(x, y, mP,linspace(minimum,maximum,10),colors='k')
             elif var == 'T':
-                CF = contourf(x,y,mP,linspace(nmp.amin(mP),400,10),cmap=matplotlib.cm.jet)
-                CS=contour(x, y, mP,linspace(nmp.amin(mP),400,10),colors='k')
+                CF = contourf(x,y,mP,linspace(minimum,400,10),cmap=matplotlib.cm.jet)
+                CS=contour(x, y, mP,linspace(minimum,400,10),colors='k')
             else:
                 norm = MidpointNormalize(midpoint=0)
-                CF = contourf(x,y,mP,linspace(nmp.amin(mP),nmp.amax(mP),1000),norm=norm,cmap='seismic')    
-                CS=contour(x, y, mP,10,colors='k')
+                CF = contourf(x,y,mP,linspace(minimum,maximum,1000),norm=norm,cmap='seismic')    
+                CS=contour(x, y, mP,linspace(minimum,maximum,10),colors='k')
         axis([min(x), max(x), min(y), max(y)])
         if xax == 'lat':
             xlabel('Latitude')
