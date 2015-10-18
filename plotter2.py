@@ -120,7 +120,7 @@ def plotfunc(var,mP,x,y,xunits,yunits,Punits):
             for line in rangefile:
                 l=line.strip('\n').split(' ')
                 key=l[0]
-                rge = [l[1],l[2]]
+                rge = [l[1],l[2],l[3]]
                 ranges[key]=rge
     else:
         print('Rangefile not found using min and max of field as ranges')
@@ -128,7 +128,8 @@ def plotfunc(var,mP,x,y,xunits,yunits,Punits):
             
     if var in ranges.keys():
         print('Current variable in rangefile')
-        minimum = ranges[var][0]; maximum=ranges[var][1]
+        minimum = float(ranges[var][0]); maximum=float(ranges[var][1])
+        num_cont = int(ranges[var][2])
     else:
         print('Current variable not found in rangefile, using default ranges')
         minimum = nmp.amin(mP); maximum = nmp.amax(mP)
@@ -146,24 +147,38 @@ def plotfunc(var,mP,x,y,xunits,yunits,Punits):
             lons, lats = nmp.meshgrid(x,y)
             mx,my = map(lons,lats)
             CF = contourf(x,y,mP,1000,cmap=matplotlib.cm.jet)
+            #clb = colorbar(CF,format='%.3f'); clb.set_label('('+Punits+')')
     if not bmap:
         gases = ['O3', 'CLO', 'BRO', 'HBR', 'HCL', 'CLY', 'BRY', 'CLOY', 'BROY', 'Z3']
-                
+        ppt = ['BRO','BROY','HBR']        
+        ppb = ['CLOY','CLO','HCL']
+        ppm = ['O3']
+        
+        if var in ppt:
+            mP = mP*1e12
+        elif var in ppb:
+            mP = mP*1e9
+        elif var in ppm:
+            mP = mP*1e6
+        elif var == 'T':
+            if "anom" not in cf_in:
+                mP = mP-273.15
+            
         if "anom" in cf_in:
                 norm = MidpointNormalize(midpoint=0)
-                CF = contourf(x,y,mP,linspace(nmp.amin(mP),nmp.amax(mP),1000),norm=norm,cmap='seismic')
-                CS=contour(x, y, mP,10,colors='k')
+                CF = contourf(x,y,mP,linspace(minimum,maximum,num_cont),norm=norm,cmap='seismic')
+                CS=contour(x, y, mP,linspace(minimum,maximum,num_cont),colors='k')
         else:
             if var in gases:
-                CF = contourf(x,y,mP,linspace(minimum,maximum,10),cmap=matplotlib.cm.jet)
-                CS = contour(x, y, mP,linspace(minimum,maximum,10),colors='k')
+                CF = contourf(x,y,mP,linspace(minimum,maximum,num_cont),cmap=matplotlib.cm.jet)
+                CS = contour(x, y, mP,linspace(minimum,maximum,num_cont),colors='k')
             elif var == 'T':
-                CF = contourf(x,y,mP,linspace(minimum,400,10),cmap=matplotlib.cm.jet)
-                CS=contour(x, y, mP,linspace(minimum,400,10),colors='k')
+                CF = contourf(x,y,mP,linspace(minimum,maximum,num_cont),cmap=matplotlib.cm.jet)
+                CS=contour(x, y, mP,linspace(minimum,maximum,num_cont),colors='k')
             else:
                 norm = MidpointNormalize(midpoint=0)
-                CF = contourf(x,y,mP,linspace(minimum,maximum,1000),norm=norm,cmap='seismic')    
-                CS=contour(x, y, mP,linspace(minimum,maximum,10),colors='k')
+                CF = contourf(x,y,mP,linspace(minimum,maximum,num_cont),norm=norm,cmap='seismic')    
+                CS=contour(x, y, mP,linspace(minimum,maximum,num_cont),norm=norm,colors='k')
         axis([min(x), max(x), min(y), max(y)])
         if xax == 'lat':
             xlabel('Latitude')
@@ -186,8 +201,19 @@ def plotfunc(var,mP,x,y,xunits,yunits,Punits):
             ylabel('Time')
         else:
             ylabel('Error')
-            
-        clb = colorbar(CF,format='%.3e'); clb.set_label('('+Punits+')')
+        
+        if var in ppt:
+            clb = colorbar(CF,format='%.3f'); clb.set_label(''+var+' (pptv)')
+        elif var in ppb:
+            clb = colorbar(CF,format='%.3f'); clb.set_label(''+var+' (ppbv)')
+        elif var in ppm:
+            clb = colorbar(CF,format='%.3f'); clb.set_label(''+var+' (ppmv)')
+        elif var == 'T':
+            clb = colorbar(CF,format='%.3f'); clb.set_label('Temperature (C)')
+        elif var == 'U':
+            clb = colorbar(CF,format='%.3f'); clb.set_label('Zonal wind (m/s)')
+        else:
+            clb = colorbar(CF,format='%.3f'); clb.set_label('('+Punits+')')
         #clabel(CS,inline=1,fontsize=8)
     return
       
