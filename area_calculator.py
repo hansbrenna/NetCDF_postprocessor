@@ -32,7 +32,7 @@ M=rho*V #Mass of air
 print('M={0} kg'.format(M))
 
 #HBr
-dmol_frac = 4e-8
+dmol_frac = 32.65e-8
 molar_mass = 80.91 # HBr=80.91, HCl=
 mol_mass_air = 28.97
 dmass_frac = dmol_frac*(molar_mass/mol_mass_air)
@@ -43,7 +43,7 @@ dhalog_mass = dmass*halog_frac
 print('Added Bromine mass from modification={0:E}'.format(dhalog_mass))
 
 #HCl
-dmol_frac = 2e-5
+dmol_frac = 22.7e-5
 molar_mass = 36.46 # HBr=80.91, HCl=
 mol_mass_air = 28.97
 dmass_frac = dmol_frac*(molar_mass/mol_mass_air)

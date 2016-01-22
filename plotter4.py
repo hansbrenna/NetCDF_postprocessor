@@ -97,7 +97,8 @@ if __name__=='__main__':
             print( "If this script is given more than 5 command line arguments, sys.argv[5] has to be 'cut', 'point' or 'band'. Give 'help' as an argument to show help text.")
             sys.exit()
             
-            id_in=sys.argv[1]
-            ds=read_data(id_in)
+    id_in=sys.argv[1]; var=sys.argv[2]
+    ds=read_data(id_in)
+    
             
             
