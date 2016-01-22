@@ -10,6 +10,7 @@ from __future__ import print_function
 import sys
 import os.path
 import numpy as nmp
+import re
 import matplotlib
 #matplotlib.use('Agg')
 from mpl_toolkits.basemap import Basemap
@@ -64,6 +65,7 @@ def ExtractVariables(ID,var,xax,yax):
     
     xunits = id_in.variables[xax].units
     yunits = id_in.variables[yax].units
+
 
     ax = [0,1,2,3]    
     
@@ -132,7 +134,7 @@ def plotfunc(var,mP,x,y,xunits,yunits,Punits):
         num_cont = int(ranges[var][2])
     else:
         print('Current variable not found in rangefile, using default ranges')
-        minimum = nmp.amin(mP); maximum = nmp.amax(mP)
+        minimum = nmp.amin(mP); maximum = nmp.amax(mP); num_cont = 16
         
     bmap = False
     if xax == 'lon' and yax == 'lat':
@@ -153,7 +155,8 @@ def plotfunc(var,mP,x,y,xunits,yunits,Punits):
         ppt = ['BRO','BROY','HBR']        
         ppb = ['CLOY','CLO','HCL']
         ppm = ['O3']
-        
+
+        anom = 1
         if var in ppt:
             mP = mP*1e12
         elif var in ppb:
@@ -161,10 +164,10 @@ def plotfunc(var,mP,x,y,xunits,yunits,Punits):
         elif var in ppm:
             mP = mP*1e6
         elif var == 'T':
-            if "anom" not in cf_in:
+            if not anom:
                 mP = mP-273.15
-            
-        if "anom" in cf_in:
+
+        if anom:
                 norm = MidpointNormalize(midpoint=0)
                 CF = contourf(x,y,mP,linspace(minimum,maximum,num_cont),norm=norm,cmap='seismic')
                 CS=contour(x, y, mP,linspace(minimum,maximum,num_cont),colors='k')
@@ -215,6 +218,10 @@ def plotfunc(var,mP,x,y,xunits,yunits,Punits):
         else:
             clb = colorbar(CF,format='%.3f'); clb.set_label('('+Punits+')')
         #clabel(CS,inline=1,fontsize=8)
+        pattern = re.compile('[0-9]{4}-[0-9]{2}')
+        sub = pattern.search(cf_in)
+        timestamp = sub.group()
+        title('Variable: '+var+'    Time: '+timestamp)
     return
       
 def figplot(ID, var, xax, yax):
