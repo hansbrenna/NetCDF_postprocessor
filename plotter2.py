@@ -244,9 +244,11 @@ def figplot(ID, var, xax, yax):
     fig = figure(num = 1, figsize=(8.,4.5), dpi=None, facecolor='w', edgecolor='k')
     plotfunc(var,mP,x,y,xunits,yunits,Punits)
     
-    if yax == 'lev':
+    if yax == 'lev' and hightop == True:
         xis.set_yscale("log")
         axis([nmp.amin(x), nmp.amax(x),nmp.amax(y),2e-5])
+    elif yax == 'lev':
+        axis([nmp.amin(x), nmp.amax(x),nmp.amax(y),nmp.amin(y)])
     elif yax == 'time':
         axis([nmp.amin(x), nmp.amax(x),nmp.amax(y),nmp.amin(y)])
     savefig(cf_in+var+xax+yax+'.png', dpi=100, facecolor='w', 
@@ -365,6 +367,8 @@ if __name__ == "__main__":
     if xax==yax:
         print( 'x-axis and y-axis are the same variable')
         sys.exit()
+    
+    hightop = False
     
     if avgall:
         figplot(id_in,variable,xax,yax)
