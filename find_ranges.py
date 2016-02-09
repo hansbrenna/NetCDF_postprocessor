@@ -18,10 +18,6 @@ def read_data(id_in):
     return data
     
 def modify_data(ds,var,le,la,lo,value):
-    consistent_sum = True
-    if consistent_sum:
-        getattr(ds,var)[dict(lat=la,lon=lo,lev=le)]=getattr(ds,var)[dict(lat=la,lon=lo,lev=le)]+value
-    else:
         getattr(ds,var)[dict(lat=la,lon=lo,lev=le)]=value
     return ds
     

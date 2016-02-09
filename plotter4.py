@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Jun 22 15:32:58 2015
+Created on Mon Oct 12 15:31:31 2015
 
 @author: hanbre
 """
@@ -36,6 +36,8 @@ def read_data(id_in):
     data = xray.open_dataset(id_in)
     return data
     
+    
+    
 def plotter(vm,x,y):
     #fig=figure()
     print('plotter')
@@ -61,7 +63,6 @@ def plotter(vm,x,y):
     #close(fig)    
     return
     
-    
 def meaner(v,mvars):
     vm = v.mean(dim=mvars)
     return vm
@@ -71,50 +72,33 @@ def pointextr(v,pvar1,p1,pvar2,p2,pvars):
     return vm
     
 if __name__=='__main__':
-    i=0
-    #case_id = id_in.split('/')
-    with open(sys.argv[1], 'r') as file_in:
-        header=next(file_in)
-        for line in file_in:
-            i+=1
-            l=line.strip('\n').split(' ')
-            id_in=l[0]
-            ds=read_data(id_in)
-            typ = l[1] 
-            print(typ)
-            var = l[2]
-            xvar = l[3]; yvar = l[4]
-            v=getattr(ds,var)
-            x=getattr(ds,xvar)
-            y=getattr(ds,yvar)
-            if typ == 'm':
-                print('here')
-                mvar1 = l[5]; mvar2 = l[6]
-                if size(v.dims)==4:
-                    mvars = [mvar1,mvar2]
-                else:
-                    mvars = [mvar1]
-                vm=meaner(v,mvars)
-                savestring = '{0}{1}{2}{3}{4}{5}{6}.png'.format(id_in,typ,var,xvar,yvar,mvar1,mvar2)
-                print(savestring)
-            elif typ == 'p':
-                print('there')
-                pvar1=l[5]; p1=int(l[7])
-                pvar2=l[6]; p2=int(l[8])
-                pvars = {pvar1: p1, pvar2: p2}
-                vm=pointextr(v,pvar1,p1,pvar2,p2,pvars)
-                savestring = '{0}{1}{2}{3}{4}{5}{6}{7}{8}.png'.format(id_in,typ,var,xvar,yvar,pvar1,pvar2,p1,p2)
-                print(savestring)
-            xis = axes([0.09,  0.1,   0.85,       0.82], axisbg = 'white')
-            fig = figure(num = i, figsize=(10.,5.), dpi=None, facecolor='w', edgecolor='k')
-            plotter(vm,x,y)
+    avgall=False; bandavg=False; point=False;
+    if len(sys.argv)<5 or 'help' in sys.argv:
+        print( 'This script takes at least 5 command line arguments ',len(sys.argv),' is given. \n')
+        print( 'The usage is: Name of this script; path and name of netcdf file to be analysed;\n')
+        print( 'name of variable; name of x-axis; name of y-axis (time, lev, lat, lon)')
+        print( 'The 6th argumaent must be either point or band. If point')
+        print( 'a point must be specified in the other two dimensions on the form (dim1 point1 dim2 point2)')
+        sys.exit()
+    elif len(sys.argv)==5:
+          avgall = True
+    elif len(sys.argv) > 5:
+        if sys.argv[5] == 'band':
+            bandavg = True
+        if sys.argv[5] == 'cut':
+            point = True
+        if sys.argv[5] == 'point':
+            point = True
+            dim1 = sys.argv[6]
+            point1 = double(sys.argv[7])
+            dim2 = sys.argv[8]
+            point2 = double(sys.argv[9])
+        else:
+            print( "If this script is given more than 5 command line arguments, sys.argv[5] has to be 'cut', 'point' or 'band'. Give 'help' as an argument to show help text.")
+            sys.exit()
             
-            if yvar == 'lev':
-                print('log=True')
-                xis.set_yscale("log")
-            savefig(savestring,dpi=100, facecolor='w', edgecolor='w', orientation='portrait')
-            print('again')
-            close(fig)
-            del(ds)
-        
+    id_in=sys.argv[1]; var=sys.argv[2]
+    ds=read_data(id_in)
     
+            
+            
