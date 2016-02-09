@@ -49,8 +49,16 @@ def plotter(vm,x,y):
         norm = MidpointNormalize(midpoint=0)
         CF=plt.contourf(x,y,vm,np.linspace(np.amin(vm.values),np.amax(vm.values),1000),norm=norm,cmap='seismic')
         CS=plt.contour(x, y, vm,10,colors='k')
-    plt.xlabel(x.units);plt.ylabel(y.units)
-    clb = plt.colorbar(CF); clb.set_label('('+v.units+')')
+    try:
+        plt.xlabel(x.units);plt.ylabel(y.units)
+    except AttributeError:
+        plt.xlabel('x'); plt.ylabel('y')
+    if y.name == 'lev':
+        plt.yscale("log")
+    try:
+        clb = plt.colorbar(CF); clb.set_label('('+v.units+')')
+    except AttributeError:
+        clb = plt.colorbar(CF)
     plt.show()
     #title=('{0} at {1}={2} and {3}={4}'.format(var,getattr(v,pvar1)[p1],getattr(v,pvar1)[p1].values,getattr(v,pvar2)[p2],getattr(v,pvar2)[p2].values))
     #close(fig)    
@@ -67,9 +75,8 @@ parser.add_argument('--Variable', '-v', help='Specify data variable field for pl
 args = parser.parse_args()
 
 var = args.Variable
-if var == None:
-    print('Variable nedds to be specified by --Variable [-v] variable_name')
-    sys.exit()
+assert var != None, 'Variable nedds to be specified by --Variable [-v] variable_name'
+
     
 FileName = args.FileName
 
@@ -78,6 +85,10 @@ dims['lat'] = args.latitude
 dims['lon'] = args.longitude
 dims['lev'] = args.level
 dims['time'] = args.time
+
+for key,value in dims.items():
+    if value == 'None':
+        dims[key]=None
 
 if 'xax' not in dims.values() or 'yax' not in dims.values():
     print('Both x-axis and y-axis mus be specified')
@@ -128,6 +139,14 @@ meanvars = []
 pointvars = {}
 
 for key,value in dims.items():
+    if value == None:
+        del(dims[key])
+        
+print(dims)
+
+for key,value in dims.items():
+    if value == None:
+        del(dims[key])
     if value == 'xax':        
         xax = getattr(data,key)
     elif value == 'yax':
