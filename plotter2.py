@@ -91,7 +91,7 @@ def ExtractVariables(ID,var,xax,yax):
     
     P = id_in.variables[var][:,:,:,:] ; # extracting 4D variable "var" (3D+T field) P=generic
     Punits = id_in.variables[var].units
-    Pname = id_in.variables[var].name
+#    Pname = id_in.variables[var].name
 #    embed()
     return x,y,P,Punits,ax,xunits,yunits
     
