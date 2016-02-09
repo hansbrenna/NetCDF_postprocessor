@@ -8,7 +8,9 @@ Created on Wed Jun 03 16:03:10 2015
 #Import required modules
 from __future__ import print_function
 import sys
+import os.path
 import numpy as nmp
+import re
 import matplotlib
 #matplotlib.use('Agg')
 from mpl_toolkits.basemap import Basemap
@@ -18,11 +20,24 @@ import matplotlib.colors as colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import Normalize
 from netCDF4 import Dataset
-import seaborn as sns
+#import seaborn as sns
 
 from IPython import embed
 
-sns.set(style="white")
+print(matplotlib.matplotlib_fname())
+
+font = {'family' : 'sans-serif',
+        'weight' : 'normal',
+        'size'   : 18}
+
+rc('font', **font)
+
+matplotlib.rcParams['xtick.labelsize']=16
+matplotlib.rcParams['ytick.labelsize']=16
+matplotlib.rcParams['ytick.major.pad']=4
+
+
+#sns.set(style="white")
 
 def find_nearest(array,value):
     idx = (nmp.abs(array-value)).argmin()
@@ -50,6 +65,7 @@ def ExtractVariables(ID,var,xax,yax):
     
     xunits = id_in.variables[xax].units
     yunits = id_in.variables[yax].units
+
 
     ax = [0,1,2,3]    
     
@@ -86,6 +102,7 @@ def plotfunc(var,mP,x,y,xunits,yunits,Punits):
     wo = 0.95 ; # width occupation for each figure (fraction)    
     
     xis = axes([0.09,  0.1,   0.85,       0.82], axisbg = 'white')
+    #xis = axes([0.1,0.1,0.1,0.82], axisbg = 'white')
     
     xx,yy=nmp.meshgrid(x,y)
     print( 'Shape of meshgrid x and y axes is ',shape(xx), shape(yy))
@@ -95,6 +112,30 @@ def plotfunc(var,mP,x,y,xunits,yunits,Punits):
         if shape(xx) != shape(mP):
             print( 'Shapes still unequal. Exiting...')
             sys.exit()
+
+    print('\n Cheking for rangefile for plotting ranges.dat in current dir...\n')            
+    if os.path.isfile('ranges.dat'):
+        print('Rangefile found, using ranges.dat')
+        with open('ranges.dat') as rangefile:
+            header = next(rangefile)
+            ranges = {}
+            for line in rangefile:
+                l=line.strip('\n').split(' ')
+                key=l[0]
+                rge = [l[1],l[2],l[3]]
+                ranges[key]=rge
+    else:
+        print('Rangefile not found using min and max of field as ranges')
+        ranges = {}
+            
+    if var in ranges.keys():
+        print('Current variable in rangefile')
+        minimum = float(ranges[var][0]); maximum=float(ranges[var][1])
+        num_cont = int(ranges[var][2])
+    else:
+        print('Current variable not found in rangefile, using default ranges')
+        minimum = nmp.amin(mP); maximum = nmp.amax(mP); num_cont = 16
+        
     bmap = False
     if xax == 'lon' and yax == 'lat':
             map = Basemap(projection = 'cyl',llcrnrlat=-90,urcrnrlat=90,llcrnrlon=0,urcrnrlon=360,resolution='l')
@@ -108,30 +149,86 @@ def plotfunc(var,mP,x,y,xunits,yunits,Punits):
             lons, lats = nmp.meshgrid(x,y)
             mx,my = map(lons,lats)
             CF = contourf(x,y,mP,1000,cmap=matplotlib.cm.jet)
+            #clb = colorbar(CF,format='%.3f'); clb.set_label('('+Punits+')')
     if not bmap:
-        if var == 'O3':
-            CF = contourf(x,y,mP,10,cmap=matplotlib.cm.jet)
-            CS=contour(x, y, mP,10,colors='k')
+        gases = ['O3', 'CLO', 'BRO', 'HBR', 'HCL', 'CLY', 'BRY', 'CLOY', 'BROY', 'Z3']
+        ppt = ['BRO','BROY','HBR']        
+        ppb = ['CLOY','CLO','HCL']
+        ppm = ['O3']
+
+        anom = 1
+        if var in ppt:
+            mP = mP*1e12
+        elif var in ppb:
+            mP = mP*1e9
+        elif var in ppm:
+            mP = mP*1e6
         elif var == 'T':
-            CF = contourf(x,y,mP,linspace(nmp.amin(mP),400,10),cmap=matplotlib.cm.jet)
-            CS=contour(x, y, mP,linspace(nmp.amin(mP),400,10),colors='k')
+            if not anom:
+                mP = mP-273.15
+
+        if anom:
+                norm = MidpointNormalize(midpoint=0)
+                CF = contourf(x,y,mP,linspace(minimum,maximum,num_cont),norm=norm,cmap='seismic')
+                CS=contour(x, y, mP,linspace(minimum,maximum,num_cont),colors='k')
         else:
-            norm = MidpointNormalize(midpoint=0)
-            CF = contourf(x,y,mP,linspace(nmp.amin(mP),nmp.amax(mP),1000),norm=norm,cmap='seismic')    
-            CS=contour(x, y, mP,10,colors='k')
-
+            if var in gases:
+                CF = contourf(x,y,mP,linspace(minimum,maximum,num_cont),cmap=matplotlib.cm.jet)
+                CS = contour(x, y, mP,linspace(minimum,maximum,num_cont),colors='k')
+            elif var == 'T':
+                CF = contourf(x,y,mP,linspace(minimum,maximum,num_cont),cmap=matplotlib.cm.jet)
+                CS=contour(x, y, mP,linspace(minimum,maximum,num_cont),colors='k')
+            else:
+                norm = MidpointNormalize(midpoint=0)
+                CF = contourf(x,y,mP,linspace(minimum,maximum,num_cont),norm=norm,cmap='seismic')    
+                CS=contour(x, y, mP,linspace(minimum,maximum,num_cont),norm=norm,colors='k')
         axis([min(x), max(x), min(y), max(y)])
-        xlabel(xunits); ylabel(yunits);
-
-    clb = colorbar(CF); clb.set_label('('+Punits+')')
-    #clabel(CS,inline=1,fontsize=8)
+        if xax == 'lat':
+            xlabel('Latitude')
+            xticks(nmp.arange(min(x),max(x)+1.0,30))
+        elif xax == 'lon':
+            xlabel('Longitude')
+        elif xax == 'lev':
+            xlabel('Pressure (hPa)')
+        elif xax == 'time':
+            xlabel('Time')
+        else:
+            xlabel('Error')
+        if yax == 'lat':
+            ylabel('Latitude')
+        elif yax == 'lon':
+            ylabel('Longitude')
+        elif yax == 'lev':
+            ylabel('Pressure (hPa)')
+        elif yax == 'time':
+            ylabel('Time')
+        else:
+            ylabel('Error')
+        
+        if var in ppt:
+            clb = colorbar(CF,format='%.3f'); clb.set_label(''+var+' (pptv)')
+        elif var in ppb:
+            clb = colorbar(CF,format='%.3f'); clb.set_label(''+var+' (ppbv)')
+        elif var in ppm:
+            clb = colorbar(CF,format='%.3f'); clb.set_label(''+var+' (ppmv)')
+        elif var == 'T':
+            clb = colorbar(CF,format='%.3f'); clb.set_label('Temperature (C)')
+        elif var == 'U':
+            clb = colorbar(CF,format='%.3f'); clb.set_label('Zonal wind (m/s)')
+        else:
+            clb = colorbar(CF,format='%.3f'); clb.set_label('('+Punits+')')
+        #clabel(CS,inline=1,fontsize=8)
+        pattern = re.compile('[0-9]{4}-[0-9]{2}')
+        sub = pattern.search(cf_in)
+        timestamp = sub.group()
+        title('Variable: '+var+'    Time: '+timestamp)
     return
       
 def figplot(ID, var, xax, yax):
 
-    fig = figure(num = 1, figsize=(10.,5.), dpi=None, facecolor='w', edgecolor='k')
+    fig = figure(num = 1, figsize=(10.,7.), dpi=None, facecolor='w', edgecolor='k')
 
-    wo = 0.95 ; # width occupation for each figure (fraction)    
+    wo = 1 ; # width occupation for each figure (fraction)    
     
     xis = axes([0.09,  0.1,   0.85,       0.82], axisbg = 'white')
     
@@ -144,7 +241,7 @@ def figplot(ID, var, xax, yax):
     mP = nmp.mean(nmp.mean(P[:,:,:,:],axis=ax[1]),axis=ax[0])
     print( 'Shape of averaged variable array for plotting is',shape(mP))
     
-    fig = figure(num = 1, figsize=(10.,5.), dpi=None, facecolor='w', edgecolor='k')
+    fig = figure(num = 1, figsize=(8.,4.5), dpi=None, facecolor='w', edgecolor='k')
     plotfunc(var,mP,x,y,xunits,yunits,Punits)
     
     if yax == 'lev':
@@ -208,7 +305,7 @@ def pointplot(ID, var, xax, yax,dim1,p1,dim2,p2):
     xP = squeeze(xP)
     print( xP.shape)
     
-    fig = figure(num = 1, figsize=(10.,5.), dpi=None, facecolor='w', edgecolor='k')
+    fig = figure(num = 1, figsize=(9.,6), dpi=None, facecolor='w', edgecolor='k')
 
     wo = 0.95 ; # width occupation for each figure (fraction)    
     
