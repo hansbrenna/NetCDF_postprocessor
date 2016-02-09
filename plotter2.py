@@ -248,6 +248,7 @@ def figplot(ID, var, xax, yax):
         xis.set_yscale("log")
         axis([nmp.amin(x), nmp.amax(x),nmp.amax(y),2e-5])
     elif yax == 'lev':
+        xis.set_yscale("log")
         axis([nmp.amin(x), nmp.amax(x),nmp.amax(y),nmp.amin(y)])
     elif yax == 'time':
         axis([nmp.amin(x), nmp.amax(x),nmp.amax(y),nmp.amin(y)])
