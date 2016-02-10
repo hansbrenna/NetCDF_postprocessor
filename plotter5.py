@@ -3,6 +3,15 @@
 Created on Tue Feb 09 13:13:49 2016
 
 @author: hanbre
+
+Issues: Implement indexing on lat,lon,lev,time values not index. make sure 
+that rest of variables set to mean will be handled correctly with and without 
+--index flag set. Implement --anomaly functionality as well as other aesthetic 
+functionality from plotter2.py. Implement averaging over ranges and not just 
+over entire dimension by giving somehting like --time 1:5 or --time 
+0005-02-01:0006-03-01. Implement an optional flag to set the name of the dim
+variables so that the program can be used for other data than CAM. 
+--dim_names TIME,LEVEL,LAT,LON ( list('TIME,LEVEL,LAT,LON'.split(',')) )
 """
 from __future__ import print_function
 import argparse
@@ -71,8 +80,11 @@ parser.add_argument('--longitude', '-lon', help='Specify what to do with longitu
 parser.add_argument('--time', '-t', help='Specify what to do with time', default='mean')
 parser.add_argument('--level', '-lev', help='Specify what to do with level', default='mean')
 parser.add_argument('--Variable', '-v', help='Specify data variable field for plotting', default=None)
+parser.add_argument('--anomaly','-a', help='If set, the data are treated as anomalies from a mean state. Divergent color mapping will be applied', action='store_true')
+parser.add_argument('--index', '-i', help='Sets the program to index dimension by index. Slicing points should be given as integers', action='store_true')
 
 args = parser.parse_args()
+
 
 var = args.Variable
 assert var != None, 'Variable nedds to be specified by --Variable [-v] variable_name'
@@ -142,24 +154,27 @@ for key,value in dims.items():
     if value == None:
         del(dims[key])
         
-print(dims)
 
-for key,value in dims.items():
-    if value == None:
-        del(dims[key])
-    if value == 'xax':        
-        xax = getattr(data,key)
-    elif value == 'yax':
-        yax = getattr(data,key)
-    elif value == 'mean':
-        meanvars.append(key)
-    else:
-        if key == 'time':
-            pointvars[key] = int(value)
-            print('Plotting time: ')
-            print(time[pointvars['time']])
+if args.index:
+    for key,value in dims.items():
+        if value == None:
+            del(dims[key])
+        if value == 'xax':        
+            xax = getattr(data,key)
+        elif value == 'yax':
+            yax = getattr(data,key)
+        elif value == 'mean':
+            meanvars.append(key)
         else:
-            pointvars[key] = int(value)
+            if key == 'time':
+                pointvars[key] = int(value)
+                print('Plotting time: ')
+                print(time[pointvars['time']])
+            else:
+                pointvars[key] = int(value)
+else:
+    print('Functionality not yet implemented. Please use the --index [-i] flag')
+    sys.exit()
             
 print('pointvars ')
 print(pointvars)
