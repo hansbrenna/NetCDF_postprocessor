@@ -18,15 +18,18 @@ import argparse
 import sys
 import datetime as dt
 import netcdftime
+from netcdftime import datetime
 import numpy as np
 import pandas as pd
 import xray
 import scipy
 import netCDF4
 import matplotlib
+from mpl_toolkits.basemap import Basemap
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from matplotlib.colors import Normalize
+#import seaborn as sns
 
 class MidpointNormalize(Normalize):
     def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
@@ -43,31 +46,48 @@ def plotter(vm,x,y):
     #fig=figure()
     print('plotter')
     
-    xx,yy=np.meshgrid(x,y)
-    if xx.shape!=vm.shape:
-        vm=vm.transpose()
+    if xax.name != 'time':
+        xx,yy=np.meshgrid(x,y)
+        if xx.shape!=vm.shape:
+            vm=vm.transpose()
     
     gases = ['O3','HCL','CL','CLY','']
-    if vm.name in gases:
-        CF = plt.contourf(x,y,vm,np.linspace(np.amin(vm.values),np.amax(vm.values),10),cmap=matplotlib.cm.jet)
-        CS=plt.contour(x, y, vm,np.linspace(np.amin(vm.values),np.amax(vm.values),10),colors='k')
-    elif var == 'T':
-        CF = plt.contourf(x,y,vm,np.linspace(np.amin(vm.values),400,10),cmap=matplotlib.cm.jet)
-        CS=plt.contour(x, y, vm,np.linspace(np.amin(vm.values),400,10),colors='k')
+    if xax.name != 'time' and yax.name != 'time':
+        
+        if vm.name in gases:
+            CF = plt.contourf(x,y,vm,np.linspace(np.amin(vm.values),np.amax(vm.values),10),cmap=matplotlib.cm.jet)
+            CS=plt.contour(x,y,vm,np.linspace(np.amin(vm.values),np.amax(vm.values),10,colors='k'))
+            #plt.show()
+        elif var == 'T':
+            CF = plt.contourf(x,y,vm,np.linspace(np.amin(vm.values),400,10),cmap=matplotlib.cm.jet)
+            CS=plt.contour(x, y, vm,np.linspace(np.amin(vm.values),400,10),colors='k')
+        else:
+            norm = MidpointNormalize(midpoint=0)
+            CF=plt.contourf(x,y,vm,np.linspace(np.amin(vm.values),np.amax(vm.values),1000),norm=norm,cmap='seismic')
+            CS=plt.contour(x, y, vm,10,colors='k')
+    
+        try:
+            plt.xlabel(x.units);plt.ylabel(y.units)
+        except AttributeError:
+            plt.xlabel('x'); plt.ylabel('y')
+            
+        if y.name == 'lev':
+            plt.yscale("log")
+        try:
+            clb = plt.colorbar(CF); clb.set_label('('+v.units+')')
+        except AttributeError:
+            clb = plt.colorbar(CF)
     else:
-        norm = MidpointNormalize(midpoint=0)
-        CF=plt.contourf(x,y,vm,np.linspace(np.amin(vm.values),np.amax(vm.values),1000),norm=norm,cmap='seismic')
-        CS=plt.contour(x, y, vm,10,colors='k')
-    try:
-        plt.xlabel(x.units);plt.ylabel(y.units)
-    except AttributeError:
-        plt.xlabel('x'); plt.ylabel('y')
-    if y.name == 'lev':
-        plt.yscale("log")
-    try:
-        clb = plt.colorbar(CF); clb.set_label('('+v.units+')')
-    except AttributeError:
-        clb = plt.colorbar(CF)
+        CF = plt.contourf(vm.transpose(),10,cmap=matplotlib.cm.jet)
+        CS = plt.contour(vm.transpose(),10,color='k')
+        xtemp = str(x.values[np.arange(0,len(x.values),6)].tolist()).strip('[').strip(']').split(',')
+        xtext = [i.split()[0] for i in xtemp]
+        plt.xticks(range(0,len(x.values),6), xtext, size='small')
+        plt.yticks(range(0,len(y),5), [y.values[i] for i in range(0,len(y),5)], size='small')
+        locs, labels = plt.xticks()
+        plt.setp(labels, rotation=45)
+
+        
     plt.show()
     #title=('{0} at {1}={2} and {3}={4}'.format(var,getattr(v,pvar1)[p1],getattr(v,pvar1)[p1].values,getattr(v,pvar2)[p2],getattr(v,pvar2)[p2].values))
     #close(fig)    
@@ -175,6 +195,16 @@ if args.index:
 else:
     print('Functionality not yet implemented. Please use the --index [-i] flag')
     sys.exit()
+    
+#    if xax.name == 'time':
+#        s=[];d=[]
+#        for t in xax.values:
+#            s.append(str(t).strip().split()[0])
+#        for i in yax.values:
+#            s.append(str(i).strip().split()[0])
+#        xax=s
+#        yax=d
+        
             
 print('pointvars ')
 print(pointvars)
