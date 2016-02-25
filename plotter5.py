@@ -16,6 +16,7 @@ variables so that the program can be used for other data than CAM.
 from __future__ import print_function
 import argparse
 import sys
+import os.path
 import datetime as dt
 import netcdftime
 from netcdftime import datetime
@@ -29,7 +30,8 @@ from mpl_toolkits.basemap import Basemap
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from matplotlib.colors import Normalize
-#import seaborn as sns
+import seaborn as sns
+import HB_module.outsourced as outs
 
 class MidpointNormalize(Normalize):
     def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
@@ -45,11 +47,14 @@ class MidpointNormalize(Normalize):
 def plotter(vm,x,y):
     #fig=figure()
     print('plotter')
-    
+    fig = plt.figure()
     if xax.name != 'time':
         xx,yy=np.meshgrid(x,y)
         if xx.shape!=vm.shape:
             vm=vm.transpose()
+            
+    minimum, maximum, num_cont = outs.check_rangefile(var,vm)
+    
     
     gases = ['O3','HCL','CL','CLY','']
     if xax.name != 'time' and yax.name != 'time':
@@ -57,7 +62,7 @@ def plotter(vm,x,y):
         if vm.name in gases:
             CF = plt.contourf(x,y,vm,np.linspace(np.amin(vm.values),np.amax(vm.values),10),cmap=matplotlib.cm.jet)
             CS=plt.contour(x,y,vm,np.linspace(np.amin(vm.values),np.amax(vm.values),10,colors='k'))
-            #plt.show()
+
         elif var == 'T':
             CF = plt.contourf(x,y,vm,np.linspace(np.amin(vm.values),400,10),cmap=matplotlib.cm.jet)
             CS=plt.contour(x, y, vm,np.linspace(np.amin(vm.values),400,10),colors='k')
@@ -78,17 +83,24 @@ def plotter(vm,x,y):
         except AttributeError:
             clb = plt.colorbar(CF)
     else:
-        CF = plt.contourf(vm.transpose(),10,cmap=matplotlib.cm.jet)
-        CS = plt.contour(vm.transpose(),10,color='k')
-        xtemp = str(x.values[np.arange(0,len(x.values),6)].tolist()).strip('[').strip(']').split(',')
-        xtext = [i.split()[0] for i in xtemp]
-        plt.xticks(range(0,len(x.values),6), xtext, size='small')
+        CF = plt.contourf(np.log10(vm.transpose()),np.linspace(np.log10(minimum),np.log10(maximum),num_cont),cmap='jet')#norm=matplotlib.colors.LogNorm(vmin=minimum,vmax=maximum),cmap='jet')
+        CS = plt.contour(np.log10(vm.transpose()),np.linspace(np.log10(minimum),np.log10(maximum),num_cont)) #,norm=matplotlib.colors.LogNorm(),color='k')
+
+        plt.axis([0,len(x),len(y),0])
         plt.yticks(range(0,len(y),5), [y.values[i] for i in range(0,len(y),5)], size='small')
+        index, xtext = outs.parse_time_axis(x,10)
+        plt.xticks(index.tolist(), xtext, size='small')
         locs, labels = plt.xticks()
         plt.setp(labels, rotation=45)
-
+        plt.ylabel(y.long_name)
+        #plt.clim(vmin=minimum,vmax=maximum)
+        clb = plt.colorbar(CF); clb.set_label('('+v.units+')')
+        plt.title('{0} as function of {1} and {2}'.format(var,x.name,y.name))
         
     plt.show()
+    title = '{0}_{1}_{2}{3}.png'.format(FileName,var,x.name,y.name)
+    fig.savefig(title)
+    print('{0} was saved'.format(title))
     #title=('{0} at {1}={2} and {3}={4}'.format(var,getattr(v,pvar1)[p1],getattr(v,pvar1)[p1].values,getattr(v,pvar2)[p2],getattr(v,pvar2)[p2].values))
     #close(fig)    
     return
