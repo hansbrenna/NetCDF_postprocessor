@@ -23,6 +23,7 @@ import restart_file_modifier2 as rfm
 
 def one_d_plot(x, fx):
     plt.plot_date(x,fx)
+    plt.title()
 
 def get_data(ID):
     case_id = ID.split('/')
@@ -32,15 +33,32 @@ def get_data(ID):
 if __name__ == '__main__':
     ds,case_id = get_data(sys.argv[1])
     
-    x = getattr(ds,sys.argv[2]).values
-    fx = getattr(ds,sys.argv[3]).values
+    xax = sys.argv[2]
+    var = sys.argv[3]    
     
+    x = getattr(ds,xax).values
+    fx = getattr(ds,var).values
+    
+    if type(fx) != np.ndarray:
+        fx = getattr(ds,var).values()      
+        fx = fx[0]
+        fx=fx.squeeze()
+        fx=fx.values
+    
+
     
     frame = pd.DataFrame(fx,index=x)
     
-    frame.plot()
+    if len(sys.argv)>4:
+        skip = sys.argv[4]
+    else:
+        skip = 1
     
-    plt.savefig('{0}_{1}_{2}.png'.format(sys.argv[1],sys.argv[2],sys.argv[3]),dpi=100)
+    frame.plot()
+    if int(skip) == 0:
+        s = raw_input('Title for plot: ')
+        plt.title(s)
+    plt.savefig('{0}/{1}_{2}_{3}.png'.format(case_id[0],case_id[1],xax,var),dpi=100)
     #plt.show()
     #one_d_plot(x,fx)
     
