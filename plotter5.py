@@ -33,6 +33,16 @@ from matplotlib.colors import Normalize
 import seaborn as sns
 import HB_module.outsourced as outs
 
+font = {'family' : 'sans-serif',
+        'weight' : 'normal',
+        'size'   : 18}
+
+#rc('font', **font)
+
+matplotlib.rcParams['xtick.labelsize']=16
+matplotlib.rcParams['ytick.labelsize']=16
+matplotlib.rcParams['ytick.major.pad']=4
+
 class MidpointNormalize(Normalize):
     def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
         self.midpoint = midpoint
@@ -44,32 +54,32 @@ class MidpointNormalize(Normalize):
         x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
         return np.ma.masked_array(np.interp(value, x, y))
 
-def plotter(vm,x,y):
+def plotter(vm,x,y,norm,cmap):
     #fig=figure()
     print('plotter')
-    fig = plt.figure()
+    fig = plt.figure(num=1,figsize=(10,4))
     if xax.name != 'time':
         xx,yy=np.meshgrid(x,y)
         if xx.shape!=vm.shape:
             vm=vm.transpose()
             
     minimum, maximum, num_cont = outs.check_rangefile(var,vm)
-    
+        
     
     gases = ['O3','HCL','CL','CLY','']
     if xax.name != 'time' and yax.name != 'time':
         
-        if vm.name in gases:
-            CF = plt.contourf(x,y,vm,np.linspace(np.amin(vm.values),np.amax(vm.values),10),cmap=matplotlib.cm.jet)
-            CS=plt.contour(x,y,vm,np.linspace(np.amin(vm.values),np.amax(vm.values),10,colors='k'))
+        if var in gases:
+            CF = plt.contourf(x,y,vm,np.linspace(minimum,maximum,num_cont),norm=norm,cmap=cmap)
+            CS=plt.contour(x,y,vm,np.linspace(minimum,maximum,num_cont))
 
         elif var == 'T':
-            CF = plt.contourf(x,y,vm,np.linspace(np.amin(vm.values),400,10),cmap=matplotlib.cm.jet)
-            CS=plt.contour(x, y, vm,np.linspace(np.amin(vm.values),400,10),colors='k')
+            CF = plt.contourf(x,y,vm,np.linspace(minimum,maximum,num_cont),norm=norm,cmap=cmap)
+            CS=plt.contour(x, y, vm,np.linspace(minimum,maximum,num_cont))
         else:
             norm = MidpointNormalize(midpoint=0)
-            CF=plt.contourf(x,y,vm,np.linspace(np.amin(vm.values),np.amax(vm.values),1000),norm=norm,cmap='seismic')
-            CS=plt.contour(x, y, vm,10,colors='k')
+            CF=plt.contourf(x,y,vm,np.linspace(minimum,maximum,num_cont),norm=norm,cmap='seismic')
+            CS=plt.contour(x, y, vm,np.linspace(minimum,maximum,num_cont),colors='k')
     
         try:
             plt.xlabel(x.units);plt.ylabel(y.units)
@@ -87,25 +97,63 @@ def plotter(vm,x,y):
         CS = plt.contour(np.log10(vm.transpose()),np.linspace(np.log10(minimum),np.log10(maximum),num_cont)) #,norm=matplotlib.colors.LogNorm(),color='k')
 
         plt.axis([0,len(x),len(y),0])
-        plt.yticks(range(0,len(y),5), [y.values[i] for i in range(0,len(y),5)], size='small')
+        plt.yticks(range(0,len(y),13), ['{:E}'.format((y.values[i])) for i in range(0,len(y),13)], fontsize='18')
         index, xtext = outs.parse_time_axis(x,10)
-        plt.xticks(index.tolist(), xtext, size='small')
+        plt.xticks(index.tolist(), xtext, fontsize='18')
         locs, labels = plt.xticks()
         plt.setp(labels, rotation=45)
-        plt.ylabel(y.long_name)
+        plt.ylabel('level (hPa)', fontsize='18')
         #plt.clim(vmin=minimum,vmax=maximum)
-        clb = plt.colorbar(CF); clb.set_label('('+v.units+')')
-        plt.title('{0} as function of {1} and {2}'.format(var,x.name,y.name))
         
+#        a=np.log10(minimum);b=np.log10(maximum)
+#        print(a);print(b)
+#        clabs = np.logspace(a,b,num_cont)
+#        cticks = np.linspace(a,b,num_cont)
+#        print(clabs)
+#        
+##        for i in range(len(clabs)):
+##            if clabs[i]%1:
+##                clabs[i]=None
+#            
+#        print("I'm here 1");print(clabs)
+#        clabs = clabs.tolist()
+#        print("I'm here 2");print(clabs)
+#        c = []
+#        for lab in clabs:
+#            l = str(lab)
+#            l2 = '{0:2g}'.format(lab)
+#            c.append(l2)
+#        print(c)            
+        
+#        clb = plt.colorbar(CF,ticks=cticks); clb.set_label('('+v.units+')')
+        clb = plt.colorbar(CF); clb.set_label('10^ ('+v.units+')',fontsize='18')
+
+#        clb.set_ticklabels(c)
+        plt.title('{0} as function of {1} and {2}'.format(var,x.name,y.name),fontsize='18')
+    #plt.figure(num=1,figsize=(20,10))   
     plt.show()
     title = '{0}_{1}_{2}{3}.png'.format(FileName,var,x.name,y.name)
-    fig.savefig(title)
+    fig.savefig(title,bbox_inches='tight')
     print('{0} was saved'.format(title))
     #title=('{0} at {1}={2} and {3}={4}'.format(var,getattr(v,pvar1)[p1],getattr(v,pvar1)[p1].values,getattr(v,pvar2)[p2],getattr(v,pvar2)[p2].values))
     #close(fig)    
     return
 
-parser = argparse.ArgumentParser()
+desc='''
+This program takes the arguments described above and a NetCDF file and 
+plots a 2D filled contour plot of the data. The arguments describe what the 
+program will do to the data before plotting. All 4 spatio-temporal dimensions
+must be given (time, latitude, longitude, level) and the argument tells the 
+program how to treat that dimension. The possible values to the dimensional 
+arguments are: xax (for assigning x-axis), yax (for y-axis), mean (for telling
+the program to average that dimension) and an integer index value for slicing
+(--index flag must be given as the slicing on value functionality has not been
+implemented yet). Usage example:
+
+python plotter5.py --index -lat xax -lon yax -t mean -lev 35 -v U file/path/name.nc
+'''
+
+parser = argparse.ArgumentParser(epilog=desc)
 parser.add_argument('FileName')
 parser.add_argument('--latitude', '-lat', help='Specify what to do with latidtude', default='xax')
 parser.add_argument('--longitude', '-lon', help='Specify what to do with longitude', default='yax')
@@ -172,8 +220,11 @@ if dims['lev'] != None:
 if dims['time'] != None:
     time = data.time.values
     
-if var in data.variables:   
-    v = getattr(data,var)
+if var in data.variables: 
+    if var == 'T':
+        v = data.variables['T']
+    else:
+        v = getattr(data,var)
 else:
     print('Variable not in dataset. ')
     print(data.variables.keys())
@@ -217,13 +268,20 @@ else:
 #        xax=s
 #        yax=d
         
-            
+
+if args.anomaly:
+    cmap = 'seismic'
+    norm = MidpointNormalize(midpoint=0)
+else:
+    cmap='jet'
+    norm = None
+           
 print('pointvars ')
 print(pointvars)
 vm1 = v.mean(dim=meanvars)
 
 vm = vm1[pointvars]
 
-plotter(vm,xax,yax)
+plotter(vm,xax,yax,norm,cmap)
 
 
