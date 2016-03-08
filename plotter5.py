@@ -22,7 +22,7 @@ import netcdftime
 from netcdftime import datetime
 import numpy as np
 import pandas as pd
-import xray
+import xarray
 import scipy
 import netCDF4
 import matplotlib
@@ -88,10 +88,16 @@ def plotter(vm,x,y,norm,cmap):
             
         if y.name == 'lev':
             plt.yscale("log")
+            
+        clb = plt.colorbar(CF);
         try:
-            clb = plt.colorbar(CF); clb.set_label('('+v.units+')')
+            clb.set_label('('+v.units+')')
         except AttributeError:
-            clb = plt.colorbar(CF)
+            if var == 'T':
+                clb.set_label('(K)')
+            else:
+                clb.set_label(' ')
+            
     else:
         CF = plt.contourf(np.log10(vm.transpose()),np.linspace(np.log10(minimum),np.log10(maximum),num_cont),cmap='jet')#norm=matplotlib.colors.LogNorm(vmin=minimum,vmax=maximum),cmap='jet')
         CS = plt.contour(np.log10(vm.transpose()),np.linspace(np.log10(minimum),np.log10(maximum),num_cont)) #,norm=matplotlib.colors.LogNorm(),color='k')
@@ -204,7 +210,7 @@ if 'xax' not in dims.values() or 'yax' not in dims.values():
 #==============================================================================
             
 
-data = xray.open_dataset(FileName)
+data = xarray.open_dataset(FileName)
 
 for key in dims.keys():
     if key not in data.variables and dims[key] != None:
