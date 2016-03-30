@@ -54,32 +54,30 @@ class MidpointNormalize(Normalize):
         x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
         return np.ma.masked_array(np.interp(value, x, y))
 
-def plotter(vm,x,y,norm,cmap):
+def plotter(vm,x,y,norm,cmap,logscale,show):
     #fig=figure()
     print('plotter')
     fig = plt.figure(num=1,figsize=(10,4))
-    if xax.name != 'time':
+    if xax.name != 'time' and yax.name != 'time':
         xx,yy=np.meshgrid(x,y)
         if xx.shape!=vm.shape:
             vm=vm.transpose()
             
     minimum, maximum, num_cont = outs.check_rangefile(var,vm)
+    
+    if logscale:
+        minimum = np.log10(minimum)
+        maximum = np.log10(maximum)
+        vm = np.log10(vm)
         
     
     gases = ['O3','HCL','CL','CLY','']
-    if xax.name != 'time' and yax.name != 'time':
+    """Unfortunately the time axis was not properly decoded, so I need to 
+    handle plots involving time as axes in a special case"""
+    if xax.name != 'time' and yax.name != 'time': 
         
-        if var in gases:
-            CF = plt.contourf(x,y,vm,np.linspace(minimum,maximum,num_cont),norm=norm,cmap=cmap)
-            CS=plt.contour(x,y,vm,np.linspace(minimum,maximum,num_cont))
-
-        elif var == 'T':
-            CF = plt.contourf(x,y,vm,np.linspace(minimum,maximum,num_cont),norm=norm,cmap=cmap)
-            CS=plt.contour(x, y, vm,np.linspace(minimum,maximum,num_cont))
-        else:
-            norm = MidpointNormalize(midpoint=0)
-            CF=plt.contourf(x,y,vm,np.linspace(minimum,maximum,num_cont),norm=norm,cmap='seismic')
-            CS=plt.contour(x, y, vm,np.linspace(minimum,maximum,num_cont),colors='k')
+        CF = plt.contourf(x,y,vm,np.linspace(minimum,maximum,num_cont),norm=norm,cmap=cmap)
+        CS=plt.contour(x,y,vm,np.linspace(minimum,maximum,num_cont))
     
         try:
             plt.xlabel(x.units);plt.ylabel(y.units)
@@ -88,23 +86,24 @@ def plotter(vm,x,y,norm,cmap):
             
         if y.name == 'lev':
             plt.yscale("log")
+            plt.ylim(np.amax(y),np.amin(y))
             
-        clb = plt.colorbar(CF);
-        try:
-            clb.set_label('('+v.units+')')
-        except AttributeError:
-            if var == 'T':
-                clb.set_label('(K)')
-            else:
-                clb.set_label(' ')
-            
-    else:
-        CF = plt.contourf(np.log10(vm.transpose()),np.linspace(np.log10(minimum),np.log10(maximum),num_cont),cmap='jet')#norm=matplotlib.colors.LogNorm(vmin=minimum,vmax=maximum),cmap='jet')
-        CS = plt.contour(np.log10(vm.transpose()),np.linspace(np.log10(minimum),np.log10(maximum),num_cont)) #,norm=matplotlib.colors.LogNorm(),color='k')
+    elif xax.name == 'time':
+        dummy_x=np.arange(0,len(x))
+        CF = plt.contourf(dummy_x,y,vm.transpose(),np.linspace(minimum,maximum,num_cont),norm=norm,cmap=cmap)#norm=matplotlib.colors.LogNorm(vmin=minimum,vmax=maximum),cmap='jet')
+        CS = plt.contour(dummy_x,y,vm.transpose(),np.linspace(minimum,maximum,num_cont)) #,norm=matplotlib.colors.LogNorm(),color='k')
 
-        plt.axis([0,len(x),len(y),0])
-        plt.yticks(range(0,len(y),13), ['{:E}'.format((y.values[i])) for i in range(0,len(y),13)], fontsize='18')
-        index, xtext = outs.parse_time_axis(x,10)
+        if y.name == 'lev':
+            plt.yscale("log")
+            plt.ylim(np.amax(y),np.amin(y))
+
+        #plt.axis([0,len(x),len(y),0])
+        #plt.yticks(range(0,len(y),13), ['{:E}'.format((y.values[i])) for i in range(0,len(y),13)], fontsize='18')
+        if len(x) <= 10:    
+            index, xtext = outs.parse_time_axis(x,len(x))
+        else:
+            index, xtext = outs.parse_time_axis(x,10)
+            
         plt.xticks(index.tolist(), xtext, fontsize='18')
         locs, labels = plt.xticks()
         plt.setp(labels, rotation=45)
@@ -132,12 +131,28 @@ def plotter(vm,x,y,norm,cmap):
 #        print(c)            
         
 #        clb = plt.colorbar(CF,ticks=cticks); clb.set_label('('+v.units+')')
-        clb = plt.colorbar(CF); clb.set_label('10^ ('+v.units+')',fontsize='18')
+        
 
 #        clb.set_ticklabels(c)
         plt.title('{0} as function of {1} and {2}'.format(var,x.name,y.name),fontsize='18')
-    #plt.figure(num=1,figsize=(20,10))   
-    plt.show()
+    elif yax.name == 'time':
+        print('functionality not yet implemented. Use the x-axis for time')
+        sys.exit()        
+    
+    if logscale:
+        clb = plt.colorbar(CF); clb.set_label('10^ ('+v.units+')',fontsize='18')
+    else:
+        clb = plt.colorbar(CF);
+        try:
+            clb.set_label('('+v.units+')')
+        except AttributeError:
+            if var == 'T':
+                clb.set_label('(K)')
+            else:
+                clb.set_label(' ')
+        #plt.figure(num=1,figsize=(20,10))   
+    if show:            
+        plt.show()
     title = '{0}_{1}_{2}{3}.png'.format(FileName,var,x.name,y.name)
     fig.savefig(title,bbox_inches='tight')
     print('{0} was saved'.format(title))
@@ -161,17 +176,19 @@ python plotter5.py --index -lat xax -lon yax -t mean -lev 35 -v U file/path/name
 
 parser = argparse.ArgumentParser(epilog=desc)
 parser.add_argument('FileName')
-parser.add_argument('--latitude', '-lat', help='Specify what to do with latidtude', default='xax')
-parser.add_argument('--longitude', '-lon', help='Specify what to do with longitude', default='yax')
-parser.add_argument('--time', '-t', help='Specify what to do with time', default='mean')
-parser.add_argument('--level', '-lev', help='Specify what to do with level', default='mean')
+parser.add_argument('--latitude', '-lat', help='Specify what to do with latidtude', default=None)
+parser.add_argument('--longitude', '-lon', help='Specify what to do with longitude', default=None)
+parser.add_argument('--time', '-t', help='Specify what to do with time', default=None)
+parser.add_argument('--level', '-lev', help='Specify what to do with level', default=None)
 parser.add_argument('--Variable', '-v', help='Specify data variable field for plotting', default=None)
 parser.add_argument('--anomaly','-a', help='If set, the data are treated as anomalies from a mean state. Divergent color mapping will be applied', action='store_true')
 parser.add_argument('--index', '-i', help='Sets the program to index dimension by index. Slicing points should be given as integers', action='store_true')
+parser.add_argument('--logarithmic_colors', '-log', help='Sets logarithmic color scaling for the plotted field',action='store_true')
+parser.add_argument('--show','-s', help='display plot before saving', action='store_true')
 
 args = parser.parse_args()
 
-
+show = args.show
 var = args.Variable
 assert var != None, 'Variable nedds to be specified by --Variable [-v] variable_name'
 
@@ -212,11 +229,22 @@ if 'xax' not in dims.values() or 'yax' not in dims.values():
 
 data = xarray.open_dataset(FileName)
 
+#Check that all coordinates in the dataset are accounted for.
+for key,value in dims.items():
+    try:
+        getattr(data,key)
+        if dims[key] == None:
+            print('{0} is present as a dimension in the dataset. Specify how to handle it at runtime'.format(key))
+            sys.exit()
+    except AttributeError:
+        print('{0} is not present as a dimension in the dataset. Set it to None at runtime')
+
 for key in dims.keys():
     if key not in data.variables and dims[key] != None:
         print(key+' not in dataset. Set the dimension to None at runtime')
         sys.exit()
 
+#assign coordinates to variables for all non-None coordinate axes. 
 if dims['lat'] != None:
     lat = data.lat.values
 if dims['lon'] != None:
@@ -225,7 +253,8 @@ if dims['lev'] != None:
     lev = data.lev.values
 if dims['time'] != None:
     time = data.time.values
-    
+
+#Check that the specified variable is present in the dataset. Special case for temperature    
 if var in data.variables: 
     if var == 'T':
         v = data.variables['T']
@@ -243,7 +272,7 @@ for key,value in dims.items():
     if value == None:
         del(dims[key])
         
-
+# Assign the x-axis, y-axis, mean and point axes.
 if args.index:
     for key,value in dims.items():
         if value == None:
@@ -264,23 +293,22 @@ if args.index:
 else:
     print('Functionality not yet implemented. Please use the --index [-i] flag')
     sys.exit()
-    
-#    if xax.name == 'time':
-#        s=[];d=[]
-#        for t in xax.values:
-#            s.append(str(t).strip().split()[0])
-#        for i in yax.values:
-#            s.append(str(i).strip().split()[0])
-#        xax=s
-#        yax=d
         
-
-if args.anomaly:
+#Apply normalisation and color map for the plotting function
+velocities = ['U','V','OMEGA']
+    
+if args.anomaly or var in velocities:
     cmap = 'seismic'
     norm = MidpointNormalize(midpoint=0)
 else:
     cmap='jet'
     norm = None
+    
+    
+if args.logarithmic_colors:
+    logscale = True
+else:
+    logscale = False
            
 print('pointvars ')
 print(pointvars)
@@ -288,6 +316,6 @@ vm1 = v.mean(dim=meanvars)
 
 vm = vm1[pointvars]
 
-plotter(vm,xax,yax,norm,cmap)
+plotter(vm,xax,yax,norm,cmap,logscale,show)
 
 
