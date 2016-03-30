@@ -69,7 +69,20 @@ def plotter(vm,x,y,norm,cmap,logscale,show):
         minimum = np.log10(minimum)
         maximum = np.log10(maximum)
         vm = np.log10(vm)
-        
+    
+    ppt = ['BRO','BROY','HBR']        
+    ppb = ['CLOY','CLO','HCL']
+    ppm = ['O3']  
+    
+    if var in ppt:
+        vm = vm*1e12
+    elif var in ppb:
+        vm = vm*1e9
+    elif var in ppm:
+        vm = vm*1e6
+    elif var == 'T':
+        if not cmap == 'seismic':
+            vm = vm-273.15
     
     gases = ['O3','HCL','CL','CLY','']
     """Unfortunately the time axis was not properly decoded, so I need to 
