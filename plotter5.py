@@ -57,18 +57,12 @@ class MidpointNormalize(Normalize):
 def plotter(vm,x,y,norm,cmap,logscale,show):
     #fig=figure()
     print('plotter')
-    fig = plt.figure(num=1,figsize=(10,4))
+    figs=(10,4)
+    fig = plt.figure(num=1,figsize=figs)
     if xax.name != 'time' and yax.name != 'time':
         xx,yy=np.meshgrid(x,y)
         if xx.shape!=vm.shape:
             vm=vm.transpose()
-            
-    minimum, maximum, num_cont = outs.check_rangefile(var,vm)
-    
-    if logscale:
-        minimum = np.log10(minimum)
-        maximum = np.log10(maximum)
-        vm = np.log10(vm)
     
     ppt = ['BRO','BROY','HBR']        
     ppb = ['CLOY','CLO','HCL']
@@ -83,12 +77,20 @@ def plotter(vm,x,y,norm,cmap,logscale,show):
     elif var == 'T':
         if not cmap == 'seismic':
             vm = vm-273.15
+           
+    minimum, maximum, num_cont = outs.check_rangefile(var,vm)
+    print('min:{0},max{1},nom_con:{2}'.format(minimum,maximum,num_cont))
+    
+    if logscale:
+        minimum = np.log10(minimum)
+        maximum = np.log10(maximum)
+        vm = np.log10(vm)
+    
     
     gases = ['O3','HCL','CL','CLY','']
     """Unfortunately the time axis was not properly decoded, so I need to 
     handle plots involving time as axes in a special case"""
     if xax.name != 'time' and yax.name != 'time': 
-        
         CF = plt.contourf(x,y,vm,np.linspace(minimum,maximum,num_cont),norm=norm,cmap=cmap)
         CS=plt.contour(x,y,vm,np.linspace(minimum,maximum,num_cont))
     
@@ -167,7 +169,7 @@ def plotter(vm,x,y,norm,cmap,logscale,show):
     if show:            
         plt.show()
     title = '{0}_{1}_{2}{3}.png'.format(FileName,var,x.name,y.name)
-    fig.savefig(title,bbox_inches='tight')
+    fig.savefig(title,bbox_inches='tight',figsize=figs,dpi=200)
     print('{0} was saved'.format(title))
     #title=('{0} at {1}={2} and {3}={4}'.format(var,getattr(v,pvar1)[p1],getattr(v,pvar1)[p1].values,getattr(v,pvar2)[p2],getattr(v,pvar2)[p2].values))
     #close(fig)    
@@ -311,10 +313,10 @@ else:
 velocities = ['U','V','OMEGA']
     
 if args.anomaly or var in velocities:
-    cmap = 'seismic'
+    cmap = sns.diverging_palette(220, 20,as_cmap=True)
     norm = MidpointNormalize(midpoint=0)
 else:
-    cmap='jet'
+    cmap=sns.cubehelix_palette(light=1, as_cmap=True)
     norm = None
     
     

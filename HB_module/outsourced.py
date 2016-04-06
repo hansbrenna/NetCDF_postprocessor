@@ -43,5 +43,5 @@ def check_rangefile(var,vm):
         num_cont = int(ranges[var][2])
     else:
         print('Current variable not found in rangefile, using default ranges')
-        minimum = np.amin(vm); maximum = np.amax(vm); num_cont = 16
+        minimum = np.amin(vm.values); maximum = np.amax(vm.values); num_cont = 16
     return minimum, maximum, num_cont

@@ -13,9 +13,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import HB_module.outsourced
 
-with open('files/tot_O3_file_list.dat','r') as file_in:
+with open('files/tot_O3_file_list2.dat','r') as file_in:
     fig = plt.figure()
     c = 0
+    sns.set_palette('dark')
     for line in file_in:
         l = line.strip('\n')
         c += 1
@@ -33,13 +34,13 @@ with open('files/tot_O3_file_list.dat','r') as file_in:
         hybi = ds.hybi
     
         if 'new_control' in line:
-            O3_mmm=xray.concat([O3_mmm,O3_mmm,O3_mmm,O3_mmm,O3_mmm],dim='time')        
-            PS = xray.concat([PS,PS,PS,PS,PS],dim='time')
+            O3_mmm=xray.concat([O3_mmm,O3_mmm,O3_mmm,O3_mmm,O3_mmm,O3_mmm,O3_mmm,O3_mmm,O3_mmm,O3_mmm],dim='time')        
+            PS = xray.concat([PS,PS,PS,PS,PS,PS,PS,PS,PS,PS],dim='time')
             #P0 = xray.concat([P0,P0,P0,P0,P0],dim='time')
         
         Plevi = hyai*P0+hybi*PS
         
-        dp = np.zeros((66,60))
+        dp = np.zeros((66,120))
         
         for i in range(Plevi.shape[1]):
             dp[:,i] = [Plevi[j,i]-Plevi[j-1,i] for j in range(1,Plevi.shape[0])]
@@ -56,16 +57,17 @@ with open('files/tot_O3_file_list.dat','r') as file_in:
             plt.plot(O3_tot_DU,linewidth='3',label='cntrl',color='k')
         else:
             O3_tot_DU_mean[c-1,:] = O3_tot_DU        
-            plt.plot(O3_tot_DU,label='ens{0}'.format('m'),color='c',linewidth='3')
+            plt.plot(O3_tot_DU,label='ens{0}'.format(c),linewidth='2')
         
         if c == 1:
-            index, xtext = HB_module.outsourced.parse_time_axis(ds.time,10)
-            plt.xticks(index.tolist(),xtext,size='larger')
+            index, xtext = HB_module.outsourced.parse_time_axis(ds.time,11)
+            plt.xticks(index.tolist(),xtext,fontsize='18')
             locs, labels = plt.xticks()
             plt.setp(labels, rotation=45)
-
-    #plt.plot(np.mean(O3_tot_DU_mean,axis=0),linewidth='3',label='ensm',color='c')
-    plt.xlabel('Time',size='larger'); plt.ylabel('Column O3 (DU)',size='larger')
+    
+    sns.set_palette('deep')
+    plt.plot(np.mean(O3_tot_DU_mean,axis=0),linewidth='3',label='ensm',color='c')
+    plt.xlabel('Time',fontsize='18'); plt.ylabel('Column O3 (DU)',fontsize=18)
     plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.,fontsize='16')
     plt.show()
-    fig.savefig('files/90S_total_O3.png',bbox_inches='tight')
+    fig.savefig('files/tot_O3.png',bbox_inches='tight')
