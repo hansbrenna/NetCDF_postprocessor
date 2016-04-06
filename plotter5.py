@@ -92,7 +92,7 @@ def plotter(vm,x,y,norm,cmap,logscale,show):
     handle plots involving time as axes in a special case"""
     if xax.name != 'time' and yax.name != 'time': 
         CF = plt.contourf(x,y,vm,np.linspace(minimum,maximum,num_cont),norm=norm,cmap=cmap)
-        CS=plt.contour(x,y,vm,np.linspace(minimum,maximum,num_cont))
+        CS=plt.contour(x,y,vm,np.linspace(minimum,maximum,num_cont),colors='k')
     
         try:
             plt.xlabel(x.units);plt.ylabel(y.units)
@@ -106,7 +106,7 @@ def plotter(vm,x,y,norm,cmap,logscale,show):
     elif xax.name == 'time':
         dummy_x=np.arange(0,len(x))
         CF = plt.contourf(dummy_x,y,vm.transpose(),np.linspace(minimum,maximum,num_cont),norm=norm,cmap=cmap)#norm=matplotlib.colors.LogNorm(vmin=minimum,vmax=maximum),cmap='jet')
-        CS = plt.contour(dummy_x,y,vm.transpose(),np.linspace(minimum,maximum,num_cont)) #,norm=matplotlib.colors.LogNorm(),color='k')
+        CS = plt.contour(dummy_x,y,vm.transpose(),np.linspace(minimum,maximum,num_cont),colors='k') #,norm=matplotlib.colors.LogNorm(),color='k')
 
         if y.name == 'lev':
             plt.yscale("log")
