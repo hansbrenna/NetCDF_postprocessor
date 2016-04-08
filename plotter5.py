@@ -83,11 +83,7 @@ def plotter(vm,x,y,norm,cmap,logscale,show):
     clevels = np.linspace(minimum,maximum,num_cont)
     
     if logscale:
-<<<<<<< HEAD
         norm=matplotlib.colors.LogNorm(vmin=minimum)
-=======
-        norm=matplotlib.colors.LogNorm()
->>>>>>> 12c09b46daec44fd0117e28fa1567acb702be3ce
         clevels=None
         #clevels = np.logspace(minimum,maximum,num_cont)
 #        minimum = np.log10(minimum)
@@ -99,17 +95,25 @@ def plotter(vm,x,y,norm,cmap,logscale,show):
     gases = ['O3','HCL','CL','CLY','']
     """Unfortunately the time axis was not properly decoded, so I need to 
     handle plots involving time as axes in a special case"""
-    if xax.name != 'time' and yax.name != 'time': 
+    if xax.name == 'lon' and yax.name == 'lat':
+        map = Basemap(projection = 'cyl',llcrnrlat=-90,urcrnrlat=90,llcrnrlon=0,urcrnrlon=360,resolution='l')
+        map.drawcoastlines(linewidth=0.25)
+        meridians = map.drawmeridians(np.arange(0,360,30))
+        map.drawmeridians(meridians,labels=[0,0,0,1],fontsize=14)
+        parallels = map.drawparallels(np.arange(-80,81,20))
+        map.drawparallels(parallels,labels=[1,0,0,0],fontsize=14)
+    
+        lons, lats = np.meshgrid(x,y)
+        mx,my = map(lons,lats)
+        CF = plt.contourf(x,y,vm,clevels,cmap=cmap,norm=norm)  
+        xl = ''; yl=''          
+    elif xax.name != 'time' and yax.name != 'time': 
         CF = plt.contourf(x,y,vm,levels=clevels,norm=norm,cmap=cmap)
         CS=plt.contour(x,y,vm,levels=clevels,colors='k',norm=norm)
             
         timestamp = outs.make_timestamp(FileName)
         plt.title('Variable: {0}  Time: {1}'.format(var,timestamp),fontsize=18)
-<<<<<<< HEAD
         plt.locator_params(axis='x',nbins=10)
-=======
->>>>>>> 12c09b46daec44fd0117e28fa1567acb702be3ce
-            
     elif xax.name == 'time':
         dummy_x=np.arange(0,len(x))
         CF = plt.contourf(dummy_x,y,vm.transpose(),levels=clevels,norm=norm,cmap=cmap)#norm=matplotlib.colors.LogNorm(vmin=minimum,vmax=maximum),cmap='jet')
@@ -252,12 +256,23 @@ if 'xax' not in dims.values() or 'yax' not in dims.values():
 
 data = xarray.open_dataset(FileName)
 
+#Check that the specified variable is present in the dataset. Special case for temperature    
+if var in data.variables: 
+    if var == 'T':
+        v = data.variables['T']
+    else:
+        v = getattr(data,var)
+else:
+    print('Variable not in dataset. ')
+    print(data.variables.keys())
+    sys.exit()
+
 #Check that all coordinates in the dataset are accounted for.
 for key,value in dims.items():
     try:
-        data.coords[key]
+        v.coords[key]
         if dims[key] == None:
-            print('{0} is present as a dimension in the dataset. Specify how to handle it at runtime'.format(key))
+            print('{0} is present as a dimension in the dataset variable. Specify how to handle it at runtime'.format(key))
             sys.exit()
     except KeyError:
         if dims[key] != None:
@@ -279,16 +294,6 @@ if dims['lev'] != None:
 if dims['time'] != None:
     time = data.time.values
 
-#Check that the specified variable is present in the dataset. Special case for temperature    
-if var in data.variables: 
-    if var == 'T':
-        v = data.variables['T']
-    else:
-        v = getattr(data,var)
-else:
-    print('Variable not in dataset. ')
-    print(data.variables.keys())
-    sys.exit()
 
 meanvars = []
 pointvars = {}
