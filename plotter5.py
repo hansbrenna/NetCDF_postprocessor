@@ -83,7 +83,11 @@ def plotter(vm,x,y,norm,cmap,logscale,show):
     clevels = np.linspace(minimum,maximum,num_cont)
     
     if logscale:
+<<<<<<< HEAD
         norm=matplotlib.colors.LogNorm(vmin=minimum)
+=======
+        norm=matplotlib.colors.LogNorm()
+>>>>>>> 12c09b46daec44fd0117e28fa1567acb702be3ce
         clevels=None
         #clevels = np.logspace(minimum,maximum,num_cont)
 #        minimum = np.log10(minimum)
@@ -101,7 +105,10 @@ def plotter(vm,x,y,norm,cmap,logscale,show):
             
         timestamp = outs.make_timestamp(FileName)
         plt.title('Variable: {0}  Time: {1}'.format(var,timestamp),fontsize=18)
+<<<<<<< HEAD
         plt.locator_params(axis='x',nbins=10)
+=======
+>>>>>>> 12c09b46daec44fd0117e28fa1567acb702be3ce
             
     elif xax.name == 'time':
         dummy_x=np.arange(0,len(x))
