@@ -78,39 +78,35 @@ def plotter(vm,x,y,norm,cmap,logscale,show):
         if not cmap == 'seismic':
             vm = vm-273.15
            
-    minimum, maximum, num_cont = outs.check_rangefile(var,vm)
+    minimum, maximum, num_cont = outs.check_rangefile(rangefile,var,vm)
     print('min:{0},max{1},nom_con:{2}'.format(minimum,maximum,num_cont))
+    clevels = np.linspace(minimum,maximum,num_cont)
     
     if logscale:
-        minimum = np.log10(minimum)
-        maximum = np.log10(maximum)
-        vm = np.log10(vm)
+        norm=matplotlib.colors.LogNorm(vmin=minimum)
+        clevels=None
+        #clevels = np.logspace(minimum,maximum,num_cont)
+#        minimum = np.log10(minimum)
+#        maximum = np.log10(maximum)
+#        vm = np.log10(vm)
     
+    xl,yl = outs.make_labels(var,vm,x,y)
     
     gases = ['O3','HCL','CL','CLY','']
     """Unfortunately the time axis was not properly decoded, so I need to 
     handle plots involving time as axes in a special case"""
     if xax.name != 'time' and yax.name != 'time': 
-        CF = plt.contourf(x,y,vm,np.linspace(minimum,maximum,num_cont),norm=norm,cmap=cmap)
-        CS=plt.contour(x,y,vm,np.linspace(minimum,maximum,num_cont),colors='k')
-    
-        try:
-            plt.xlabel(x.units);plt.ylabel(y.units)
-        except AttributeError:
-            plt.xlabel('x'); plt.ylabel('y')
+        CF = plt.contourf(x,y,vm,levels=clevels,norm=norm,cmap=cmap)
+        CS=plt.contour(x,y,vm,levels=clevels,colors='k',norm=norm)
             
-        if y.name == 'lev':
-            plt.yscale("log")
-            plt.ylim(np.amax(y),np.amin(y))
+        timestamp = outs.make_timestamp(FileName)
+        plt.title('Variable: {0}  Time: {1}'.format(var,timestamp),fontsize=18)
+        plt.locator_params(axis='x',nbins=10)
             
     elif xax.name == 'time':
         dummy_x=np.arange(0,len(x))
-        CF = plt.contourf(dummy_x,y,vm.transpose(),np.linspace(minimum,maximum,num_cont),norm=norm,cmap=cmap)#norm=matplotlib.colors.LogNorm(vmin=minimum,vmax=maximum),cmap='jet')
-        CS = plt.contour(dummy_x,y,vm.transpose(),np.linspace(minimum,maximum,num_cont),colors='k') #,norm=matplotlib.colors.LogNorm(),color='k')
-
-        if y.name == 'lev':
-            plt.yscale("log")
-            plt.ylim(np.amax(y),np.amin(y))
+        CF = plt.contourf(dummy_x,y,vm.transpose(),levels=clevels,norm=norm,cmap=cmap)#norm=matplotlib.colors.LogNorm(vmin=minimum,vmax=maximum),cmap='jet')
+        CS = plt.contour(dummy_x,y,vm.transpose(),levels=clevels,norm=norm,colors='k') #,norm=matplotlib.colors.LogNorm(),color='k')
 
         #plt.axis([0,len(x),len(y),0])
         #plt.yticks(range(0,len(y),13), ['{:E}'.format((y.values[i])) for i in range(0,len(y),13)], fontsize='18')
@@ -122,7 +118,6 @@ def plotter(vm,x,y,norm,cmap,logscale,show):
         plt.xticks(index.tolist(), xtext, fontsize='18')
         locs, labels = plt.xticks()
         plt.setp(labels, rotation=45)
-        plt.ylabel('level (hPa)', fontsize='18')
         #plt.clim(vmin=minimum,vmax=maximum)
         
 #        a=np.log10(minimum);b=np.log10(maximum)
@@ -153,18 +148,18 @@ def plotter(vm,x,y,norm,cmap,logscale,show):
     elif yax.name == 'time':
         print('functionality not yet implemented. Use the x-axis for time')
         sys.exit()        
+
+    if y.name == 'lev':
+        plt.yscale("log")
+        plt.ylim(np.amax(y),np.amin(y))    
     
-    if logscale:
-        clb = plt.colorbar(CF); clb.set_label('10^ ('+v.units+')',fontsize='18')
-    else:
-        clb = plt.colorbar(CF);
-        try:
-            clb.set_label('('+v.units+')')
-        except AttributeError:
-            if var == 'T':
-                clb.set_label('(K)')
-            else:
-                clb.set_label(' ')
+    plt.xlabel(xl, fontsize=18);plt.ylabel(yl,fontsize=18)
+
+    cl = outs.clb_labels(var,ppm,ppb,ppt)
+    print(cl)
+    
+    clb = plt.colorbar(CF,format='%.3g');
+    clb.set_label(cl,fontsize=18)
         #plt.figure(num=1,figsize=(20,10))   
     if show:            
         plt.show()
@@ -200,6 +195,7 @@ parser.add_argument('--anomaly','-a', help='If set, the data are treated as anom
 parser.add_argument('--index', '-i', help='Sets the program to index dimension by index. Slicing points should be given as integers', action='store_true')
 parser.add_argument('--logarithmic_colors', '-log', help='Sets logarithmic color scaling for the plotted field',action='store_true')
 parser.add_argument('--show','-s', help='display plot before saving', action='store_true')
+parser.add_argument('--rangefile',help='specify path to text file containing color ranges for the plot', default='ranges.dat')
 
 args = parser.parse_args()
 
@@ -207,7 +203,8 @@ show = args.show
 var = args.Variable
 assert var != None, 'Variable nedds to be specified by --Variable [-v] variable_name'
 
-    
+rangefile = args.rangefile 
+   
 FileName = args.FileName
 
 dims = {}
@@ -247,13 +244,15 @@ data = xarray.open_dataset(FileName)
 #Check that all coordinates in the dataset are accounted for.
 for key,value in dims.items():
     try:
-        getattr(data,key)
+        data.coords[key]
         if dims[key] == None:
             print('{0} is present as a dimension in the dataset. Specify how to handle it at runtime'.format(key))
             sys.exit()
-    except AttributeError:
-        print('{0} is not present as a dimension in the dataset. Set it to None at runtime')
-
+    except KeyError:
+        if dims[key] != None:
+            print('{0} is not present as a dimension in the dataset. Set it to None at runtime'.format(key))
+            sys.exit()          
+            
 for key in dims.keys():
     if key not in data.variables and dims[key] != None:
         print(key+' not in dataset. Set the dimension to None at runtime')

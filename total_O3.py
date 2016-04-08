@@ -69,5 +69,6 @@ with open('files/tot_O3_file_list2.dat','r') as file_in:
     plt.plot(np.mean(O3_tot_DU_mean,axis=0),linewidth='3',label='ensm',color='c')
     plt.xlabel('Time',fontsize='18'); plt.ylabel('Column O3 (DU)',fontsize=18)
     plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.,fontsize='16')
+    plt.title('Global column ozone',fontsize=18)
     plt.show()
-    fig.savefig('files/tot_O3.png',bbox_inches='tight')
+    fig.savefig('files/tot_O3.png',dpi=200,bbox_inches='tight')
