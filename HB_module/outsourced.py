@@ -12,7 +12,7 @@ import re
 
 def parse_time_axis(t,res):
     #"""parse_time_axis(time_axis, resolution) parses an xray DataArray of netcdftime objects into a list of strings to be used for axis labelling"""
-    print(t)
+    #print(t)
     length = t.shape[0]
     print(length)
     ind = np.floor(np.linspace(0,length-1,res)).astype(int)

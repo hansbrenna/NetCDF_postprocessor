@@ -113,8 +113,12 @@ def plotter(vm,x,y,norm,cmap,logscale,show):
         if len(x) <= 10:    
             index, xtext = outs.parse_time_axis(x,len(x))
         else:
-            index, xtext = outs.parse_time_axis(x,10)
-            
+            index, xtext = outs.parse_time_axis(x,12)
+
+        if 'control+' in FileName:
+            xtext[0]='ctr-02-01' 
+            plt.plot((dummy_x[11],dummy_x[11]),(y[0],y[len(y)-1]),color='k')
+        
         plt.xticks(index.tolist(), xtext, fontsize='18')
         locs, labels = plt.xticks()
         plt.setp(labels, rotation=45)
