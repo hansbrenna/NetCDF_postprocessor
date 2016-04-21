@@ -77,6 +77,13 @@ def make_timestamp(SearchString):
     timestamp = sub.group()
     #title('Variable: '+var+'    Time: '+timestamp)
     return timestamp
+    
+def make_timestamp_clim(SearchString):
+    pattern = re.compile('h0.[0-9]{2}.')
+    sub = pattern.search(SearchString)
+    timestamp = sub.group()
+    #title('Variable: '+var+'    Time: '+timestamp)
+    return timestamp
 
 def clb_labels(var,ppm,ppb,ppt):       
     if var in ppt:
@@ -93,6 +100,10 @@ def clb_labels(var,ppm,ppb,ppt):
         cl='Meridional wind (m/s)'
     elif var == 'OMEGA':
         cl='Vertical wind (Pa/s)'
+    elif var == 'O3_CHML':
+        cl = 'O3 chmical loss rate (/cm3/s)'
+    elif var == 'O3_CHMP':
+        cl = 'O3 chmical production rate (/cm3/s)'
     else:
         cl = '{}'.format(var)
     return cl
