@@ -53,12 +53,17 @@ ds3=ds.merge(ds2)
 ds3.totO3.attrs['units']='DU'
 ds3.totO3.attrs['long_name']='Column ozone in Dobson Units'
 
+dummy_time = np.arange(0,len(ds3.time))
+
+ds3.time = dummy_time
+
 x = ds3.lon; y = ds3.lat
 clevels=None
 cmap=sns.cubehelix_palette(light=1, as_cmap=True)
 norm=None
 var = ds3.totO3
 
+ds3.to_netcdf('{0}_colO3.nc'.format(file_id))
 
 """
 map = Basemap(projection = 'cyl',llcrnrlat=-30,urcrnrlat=30,llcrnrlon=0,urcrnrlon=360,resolution='l')#projection='splaea',boundinglat=-45,lon_0=270,resolution='l')#(projection='ortho',lat_0=60.,lon_0=-60.)#projection = 'cyl',llcrnrlat=-90,urcrnrlat=90,llcrnrlon=0,urcrnrlon=360,resolution='l')
