@@ -152,6 +152,8 @@ def plotter(vm,x,y,norm,cmap,logscale,show,figs):
         
         if y.name == 'lev':
             yname = 'level'
+        else:
+            yname = y.name
 #        clb.set_ticklabels(c)
         plt.title('{0} as function of {1} and {2}'.format(var,x.name,yname),fontsize='18')
     elif y.name == 'time':
@@ -166,7 +168,7 @@ def plotter(vm,x,y,norm,cmap,logscale,show,figs):
 
     cl = outs.clb_labels(var,ppm,ppb,ppt)
     if args.relative_anomalies:
-        cl = '{0} relative anomaly'.format(var)
+        cl = '{0} percent change'.format(var)
     print(cl)
     
     clb = plt.colorbar(CF,format='%.3g');
@@ -333,7 +335,7 @@ if __name__ == "__main__":
         sys.exit()
         
     if args.relative_anomalies:
-        midpoint =1.0
+        midpoint =0
     else:
         midpoint=float(args.midpoint)
             
@@ -376,6 +378,9 @@ if __name__ == "__main__":
             if not args.anomaly:
                 print("I'll subtract 273")
                 vm = vm-273.15
+
+    if args.relative_anomalies:
+        vm = vm*100-100
     
     plotter(vm,xax,yax,norm,cmap,logscale,show,figsize)
     

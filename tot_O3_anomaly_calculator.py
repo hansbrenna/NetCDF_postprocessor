@@ -55,7 +55,7 @@ ds3.totO3.attrs['long_name']='Column ozone in Dobson Units'
 
 dummy_time = np.arange(0,len(ds3.time))
 
-ds3.time = dummy_time
+ds3.time.values = dummy_time
 
 x = ds3.lon; y = ds3.lat
 clevels=None
