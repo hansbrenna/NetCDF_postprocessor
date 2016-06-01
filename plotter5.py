@@ -118,6 +118,9 @@ def plotter(vm,x,y,norm,cmap,logscale,show,figs):
             index, xtext = outs.parse_time_axis(x,len(x))
         else:
             index, xtext = outs.parse_time_axis(x,12)
+            
+        xtext = ['1-02-01', '2-01-01', '3-01-01', '4-01-01', '5-01-01', '6-01-01', '7-01-01', '8-01-01', '9-01-01', '10-01-01', '11-01-01']
+        index=np.array([  0,  11,  23,  35,  47,  59,  71,  83,  95, 107, 119])
 
         if 'control+' in FileName:
             xtext[0]='ctr-02-01' 
