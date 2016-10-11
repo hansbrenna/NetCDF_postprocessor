@@ -34,8 +34,8 @@ import re
 import seaborn as sns
 import HB_module.outsourced as outs
 
-
-sns.set(rc={'axes.facecolor':'white'})
+sns.set_style('ticks')
+#sns.set(rc={'axes.facecolor':'white'})
 
 #rc('font', **font)
 
@@ -94,7 +94,8 @@ def plotter(vm,x,y,norm,cmap,logscale,show,figs):
         xl = ''; yl=''          
     elif x.name != 'time' and y.name != 'time': 
         CF = plt.contourf(x,y,vm,levels=clevels,norm=norm,cmap=cmap)
-        CS=plt.contour(x,y,vm,levels=clevels,colors='k',norm=norm)
+        if args.noblack == False:        
+            CS=plt.contour(x,y,vm,levels=clevels,colors='k',norm=norm)
         
         try:    
             timestamp = outs.make_timestamp(FileName)
@@ -110,7 +111,8 @@ def plotter(vm,x,y,norm,cmap,logscale,show,figs):
     elif x.name == 'time':
         dummy_x=np.arange(0,len(x))
         CF = plt.contourf(dummy_x,y,vm.transpose(),levels=clevels,norm=norm,cmap=cmap)#norm=matplotlib.colors.LogNorm(vmin=minimum,vmax=maximum),cmap='jet')
-        CS = plt.contour(dummy_x,y,vm.transpose(),levels=clevels,norm=norm,colors='k') #,norm=matplotlib.colors.LogNorm(),color='k')
+        if args.noblack == False:         
+            CS = plt.contour(dummy_x,y,vm.transpose(),levels=clevels,norm=norm,colors='k') #,norm=matplotlib.colors.LogNorm(),color='k')
 
         #plt.axis([0,len(x),len(y),0])
         #plt.yticks(range(0,len(y),13), ['{:E}'.format((y.values[i])) for i in range(0,len(y),13)], fontsize='18')
@@ -119,8 +121,8 @@ def plotter(vm,x,y,norm,cmap,logscale,show,figs):
         else:
             index, xtext = outs.parse_time_axis(x,12)
             
-        xtext = ['1-02-01', '2-01-01', '3-01-01', '4-01-01', '5-01-01', '6-01-01', '7-01-01', '8-01-01', '9-01-01', '10-01-01', '11-01-01']
-        index=np.array([  0,  11,  23,  35,  47,  59,  71,  83,  95, 107, 119])
+        #xtext = ['1-02-01', '2-01-01', '3-01-01', '4-01-01', '5-01-01', '6-01-01', '7-01-01', '8-01-01', '9-01-01', '10-01-01', '11-01-01']
+        #index=np.array([  0,  11,  23,  35,  47,  59,  71,  83,  95, 107, 119])
 
         if 'control+' in FileName:
             xtext[0]='ctr-02-01' 
@@ -207,6 +209,8 @@ if __name__ == "__main__":
     parser.add_argument('--longitude', '-lon', help='Specify what to do with longitude', default=None)
     parser.add_argument('--time', '-t', help='Specify what to do with time', default=None)
     parser.add_argument('--level', '-lev', help='Specify what to do with level', default=None)
+    parser.add_argument('--xaxis_limits','-xlim',help='indices to limit a subsection of the x axis. The spcified axis will be indexed by these values',nargs=2, default=None,type=int)
+    parser.add_argument('--yaxis_limits','-ylim',help='indices to limit a subsection of the y axis. The spcified axis will be indexed by these values',nargs=2, default=None,type=int)
     parser.add_argument('--Variable', '-v', help='Specify data variable field for plotting', default=None)
     parser.add_argument('--anomaly','-a', help='If set, the data are treated as anomalies from a mean state. Divergent color mapping will be applied', action='store_true')
     parser.add_argument('--index', '-i', help='Sets the program to index dimension by index. Slicing points should be given as integers', action='store_true')
@@ -216,6 +220,7 @@ if __name__ == "__main__":
     parser.add_argument('--figsize', help='Tuple specifying the figure size default=(10,4)',default='(10,4)')
     parser.add_argument('--midpoint', help='Specify midpoint value for divergent colormap, default=0',default=0)
     parser.add_argument('--relative_anomalies', '-ra', help='If ser the data are treated as relative anomalies from mean state. Divergent color mapping and midpoint=1 will be applied',action='store_true')
+    parser.add_argument('--noblack','-nb',help='if specified, removed black contourlines from the contourf plot', action='store_true')
     
     args = parser.parse_args()
     
@@ -337,6 +342,20 @@ if __name__ == "__main__":
         print('Functionality not yet implemented. Please use the --index [-i] flag')
         sys.exit()
         
+    if args.xaxis_limits != None:
+        xlims = np.arange(args.xaxis_limits[0],args.xaxis_limits[1])
+        x_lims = {}
+        x_lims[xax.name]=xlims
+        v = v[x_lims]
+        xax = xax[xlims]
+        
+    if args.yaxis_limits != None:
+        ylims = np.arange(args.yaxis_limits[0],args.yaxis_limits[1])
+        y_lims = {}
+        y_lims[yax.name]=ylims
+        v = v[y_lims]
+        yax = yax[ylims]
+        
     if args.relative_anomalies:
         midpoint =0
     else:
@@ -349,7 +368,9 @@ if __name__ == "__main__":
         cmap = sns.diverging_palette(220, 20,as_cmap=True)
         norm = MidpointNormalize(midpoint=midpoint)
     else:
-        cmap=sns.cubehelix_palette(light=1,as_cmap=True)
+        #cmap = sns.cubehelix_palette(start=.5, rot=-.75, light=1,dark=0.1, as_cmap=True)
+        #cmap=sns.cubehelix_palette(light=1,as_cmap=True)
+        cmap = 'viridis'
         norm = None
     
     figsize = args.figsize.strip('(').strip(')').split(',')
@@ -368,7 +389,8 @@ if __name__ == "__main__":
     
     ppt = ['BRO','BROY','HBR']        
     ppb = ['CLOY','CLO','HCL']
-    ppm = ['O3']  
+    ppm = ['O3']
+    um2pcm3 = ['sad_sage']
 
     if not args.relative_anomalies:
         if var in ppt:
@@ -377,6 +399,8 @@ if __name__ == "__main__":
             vm = vm*1e9
         elif var in ppm:
             vm = vm*1e6
+        elif var in um2pcm3:
+            vm = vm*1e8
         elif var == 'T':
             if not args.anomaly:
                 print("I'll subtract 273")

@@ -10,16 +10,18 @@ import pandas as pd
 import xray
 import re
 
-def parse_time_axis(t,res):
+def parse_time_axis(t,res,verbose=True):
     #"""parse_time_axis(time_axis, resolution) parses an xray DataArray of netcdftime objects into a list of strings to be used for axis labelling"""
     #print(t)
     length = t.shape[0]
-    print(length)
     ind = np.floor(np.linspace(0,length-1,res)).astype(int)
-    print(ind)
     xtemp = str(t.values[ind].tolist()).strip('[').strip(']').split(',')
-    text = [i.split()[0] for i in xtemp]
-    print(text)
+    text = [i.split()[0] for i in xtemp]    
+    if verbose:
+        print(length)
+        print(ind)
+        print(text)
+        
     return ind, text    
 
 def check_rangefile(ranges,var,vm): 
