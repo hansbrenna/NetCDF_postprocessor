@@ -1,0 +1,7 @@
+var min max num_cont
+HCL 1e-11 1e-6 11
+HBR 1e-10 1e-9 15
+CLOY 1e-11 1e-6 11
+BROY 1e-10 1e-10 21
+O3 1e-8 12 13
+U -120 120 11e-8

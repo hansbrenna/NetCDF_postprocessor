@@ -5,6 +5,7 @@ Created on Tue Feb 23 09:46:10 2016
 @author: hanbre
 """
 import os.path
+import sys
 import numpy as np
 import pandas as pd
 import xray
@@ -30,24 +31,48 @@ def check_rangefile(ranges,var,vm):
         print('Rangefile found, using {0}'.format(ranges))
         with open(ranges) as rangefile:
             header = next(rangefile)
-            ranges = {}
-            for line in rangefile:
-                l=line.strip('\n').split(' ')
-                key=l[0]
-                rge = [l[1],l[2],l[3]]
-                ranges[key]=rge
+            if 'num_cont' in header:
+                print('range file found in mode (min max num)')
+                ranges = {}
+                for line in rangefile:
+                    l=line.strip('\n').split(' ')
+                    key=l[0]
+                    rge = [l[1],l[2],l[3]]
+                    ranges[key]=rge
+                if var in ranges.keys():
+                    print('Current variable in rangefile')
+                    minimum = float(ranges[var][0]); maximum=float(ranges[var][1])
+                    num_cont = int(ranges[var][2])
+                    clevels = np.linspace(minimum,maximum,num_cont)
+                else:
+                    print('Current variable not found in rangefile, using default ranges')
+                    minimum = np.amin(vm.values); maximum = np.amax(vm.values); num_cont = 16
+                    clevels = np.linspace(minimum,maximum,num_cont)
+            elif 'levels' in header:
+                print('rangefile found in mode (clevels)')
+                ranges = {}
+                for line in rangefile:
+                    l=line.strip('\n').split(' ')
+                    key = l[0]
+                    l.remove(key)
+                    levels = np.array(l).astype(float)
+                    ranges[key]=levels
+                if var in ranges.keys():
+                    print('Current variable in rangefile')
+                    clevels = ranges[var]
+                else:
+                    print('Current variable not found in rangefile, using default ranges')
+                    minimum = np.amin(vm.values); maximum = np.amax(vm.values); num_cont = 16
+                    clevels = np.linspace(minimum,maximum,num_cont)
+            else:
+                print('something went wrong with the ranges. Check the range file')
+                sys.exit()
     else:
         print('Rangefile not found using min and max of field as ranges')
         ranges = {}
-            
-    if var in ranges.keys():
-        print('Current variable in rangefile')
-        minimum = float(ranges[var][0]); maximum=float(ranges[var][1])
-        num_cont = int(ranges[var][2])
-    else:
-        print('Current variable not found in rangefile, using default ranges')
         minimum = np.amin(vm.values); maximum = np.amax(vm.values); num_cont = 16
-    return minimum, maximum, num_cont
+        clevels = np.linspace(minimum,maximum,num_cont)
+    return clevels
     
 def make_labels(var,vm,x,y):
     try:
@@ -106,6 +131,10 @@ def clb_labels(var,ppm,ppb,ppt):
         cl = 'O3 chmical loss rate (/cm3/s)'
     elif var == 'O3_CHMP':
         cl = 'O3 chmical production rate (/cm3/s)'
+    elif var == 'QRS':
+        cl = 'Short wave heating rate (K/s)'
+    elif var == 'QRL':
+        cl = 'Long wave heating rate (K/s)'
     else:
         cl = '{}'.format(var)
     return cl

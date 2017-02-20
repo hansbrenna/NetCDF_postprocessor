@@ -63,11 +63,11 @@ def plotter(vm,x,y,norm,cmap,logscale,show,figs):
         if xx.shape!=vm.shape:
             vm=vm.transpose()
            
-    minimum, maximum, num_cont = outs.check_rangefile(rangefile,var,vm)
-    print('min:{0},max{1},nom_con:{2}'.format(minimum,maximum,num_cont))
-    clevels = np.linspace(minimum,maximum,num_cont)
+    clevels = outs.check_rangefile(rangefile,var,vm)
+    print('color levels are: {0}'.format(clevels))
     
     if logscale:
+        minimum = np.min(vm)
         norm=matplotlib.colors.LogNorm(vmin=minimum)
         clevels=None
         #clevels = np.logspace(minimum,maximum,num_cont)
@@ -121,8 +121,8 @@ def plotter(vm,x,y,norm,cmap,logscale,show,figs):
         else:
             index, xtext = outs.parse_time_axis(x,12)
             
-        #xtext = ['1-02-01', '2-01-01', '3-01-01', '4-01-01', '5-01-01', '6-01-01', '7-01-01', '8-01-01', '9-01-01', '10-01-01', '11-01-01']
-        #index=np.array([  0,  11,  23,  35,  47,  59,  71,  83,  95, 107, 119])
+        xtext = ['01-01', '02-01', '03-01', '04-01', '05-01', '06-01', '07-01', '08-01', '09-01', '10-01', '11-01','12-01']
+        index=np.array([  0,  12,  24,  36,  48,  60,  72,  84,  96, 108, 120, 132])
 
         if 'control+' in FileName:
             xtext[0]='ctr-02-01' 
@@ -182,7 +182,10 @@ def plotter(vm,x,y,norm,cmap,logscale,show,figs):
     if show:            
         plt.show()
     title = '{0}_{1}_{2}{3}.png'.format(FileName,var,x.name,y.name)
-    fig.savefig(title,bbox_inches='tight',figsize=figs,dpi=200)
+    fig.savefig(title,bbox_inches='tight',figsize=figs,dpi=300)
+    print('{0} was saved'.format(title))
+    title = '{0}_{1}_{2}{3}.svg'.format(FileName,var,x.name,y.name)
+    fig.savefig(title,bbox_inches='tight',figsize=figs,dpi=300)
     print('{0} was saved'.format(title))
     #title=('{0} at {1}={2} and {3}={4}'.format(var,getattr(v,pvar1)[p1],getattr(v,pvar1)[p1].values,getattr(v,pvar2)[p2],getattr(v,pvar2)[p2].values))
     #close(fig)    
@@ -195,7 +198,7 @@ if __name__ == "__main__":
     program will do to the data before plotting. All 4 spatio-temporal dimensions
     must be given (time, latitude, longitude, level) and the argument tells the 
     program how to treat that dimension. The possible values to the dimensional 
-    arguments are: xax (for assigning x-axis), yax (for y-axis), mean (for telling
+    arguments are: None if the axis is not present, xax (for assigning x-axis), yax (for y-axis), mean (for telling
     the program to average that dimension) and an integer index value for slicing
     (--index flag must be given as the slicing on value functionality has not been
     implemented yet). Usage example:
@@ -218,6 +221,7 @@ if __name__ == "__main__":
     parser.add_argument('--show','-s', help='display plot before saving', action='store_true')
     parser.add_argument('--rangefile',help='specify path to text file containing color ranges for the plot', default='ranges.dat')
     parser.add_argument('--figsize', help='Tuple specifying the figure size default=(10,4)',default='(10,4)')
+    parser.add_argument('--activate_midpoint','-am', help='activate the possibility of setting midpoint normalization without diverging colormap',action='store_true')    
     parser.add_argument('--midpoint', help='Specify midpoint value for divergent colormap, default=0',default=0)
     parser.add_argument('--relative_anomalies', '-ra', help='If ser the data are treated as relative anomalies from mean state. Divergent color mapping and midpoint=1 will be applied',action='store_true')
     parser.add_argument('--noblack','-nb',help='if specified, removed black contourlines from the contourf plot', action='store_true')
@@ -370,8 +374,12 @@ if __name__ == "__main__":
     else:
         #cmap = sns.cubehelix_palette(start=.5, rot=-.75, light=1,dark=0.1, as_cmap=True)
         #cmap=sns.cubehelix_palette(light=1,as_cmap=True)
-        cmap = 'viridis'
-        norm = None
+        #cmap = 'viridis'
+        cmap = sns.cubehelix_palette(start=.5, rot=-.75,as_cmap=True)
+        if args.activate_midpoint:
+            norm = MidpointNormalize(midpoint=midpoint)
+        else:
+            norm = None
     
     figsize = args.figsize.strip('(').strip(')').split(',')
     figsize = [float(s) for s in figsize]
@@ -401,7 +409,7 @@ if __name__ == "__main__":
             vm = vm*1e6
         elif var in um2pcm3:
             vm = vm*1e8
-        elif var == 'T':
+        elif var in ['T','TS']:
             if not args.anomaly:
                 print("I'll subtract 273")
                 vm = vm-273.15
