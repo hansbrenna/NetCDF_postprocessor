@@ -33,6 +33,10 @@ from matplotlib.colors import Normalize
 import re
 import seaborn as sns
 import HB_module.outsourced as outs
+try:
+    import Ngl
+except ImportError:
+    print('Library Ngl is not found on the system. Interpolation will not work. do not use -int option.')
 
 sns.set_style('ticks')
 #sns.set(rc={'axes.facecolor':'white'})
@@ -225,6 +229,7 @@ if __name__ == "__main__":
     parser.add_argument('--midpoint', help='Specify midpoint value for divergent colormap, default=0',default=0)
     parser.add_argument('--relative_anomalies', '-ra', help='If ser the data are treated as relative anomalies from mean state. Divergent color mapping and midpoint=1 will be applied',action='store_true')
     parser.add_argument('--noblack','-nb',help='if specified, removed black contourlines from the contourf plot', action='store_true')
+    parser.add_argument('--vertical_interpolation','-int',help='toogle interpolation to pressure levels. Requires Ngl',action='store_true')
     
     args = parser.parse_args()
     
@@ -391,9 +396,15 @@ if __name__ == "__main__":
                
     print('pointvars ')
     print(pointvars)
+    if args.vertical_interpolation: #interpolate to pressure levels. By default, the same levels as in the original data.
+        print('Interpolating...')        
+        v = HB_module.vertical_interpolation.vertical_interpolation(v,v.lev,v.hyam,v.hybm,v.PS,v.P0)
+        
     vm1 = v.mean(dim=meanvars)
     
     vm = vm1[pointvars]
+    
+
     
     ppt = ['BRO','BROY','HBR']        
     ppb = ['CLOY','CLO','HCL']

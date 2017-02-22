@@ -35,7 +35,7 @@ T = ['']
 ppt = ['BRO','BROY','HBR']        
 ppb = ['CLOY','CLO','HCL']
 ppm = ['O3']
-region = 'global'
+region = '65N'
 in_name = input_file.split('.')[0]
 df = pd.DataFrame(index=np.arange(1,13))
 #fig = plt.figure(figsize=(20,20))

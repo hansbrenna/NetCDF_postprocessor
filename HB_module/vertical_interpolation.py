@@ -14,6 +14,9 @@ import Ngl
 
 
 def vertical_interpolation(da,lev_n, hya, hyb, PS, P0):
+    """This function operates on xarray.DataArray objects. Uses Ngl vinth2p.
+    Give the original data, the pressure levels to interpolate to, the hybrid 
+    coefficients, surface and reference pressure. Returns a DataArray object"""
     nlev = len(lev_n)
     dummy = np.empty(shape=[len(da.time),nlev,len(da.lat),len(da.lon)])
     time = da.time; lat = da.lat; lon = da.lon;

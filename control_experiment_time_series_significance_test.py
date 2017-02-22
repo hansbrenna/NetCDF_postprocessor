@@ -73,6 +73,10 @@ elif region == 'antarctic':
     control=pd.read_csv('/home/hanbre/norstore_project/BCKUP_after_21.07.15/new_control_test/time_series/antarctic_{}_control_run.csv'.format(var),index_col=0)
 elif region == 'arctic':
     control=pd.read_csv('/home/hanbre/norstore_project/BCKUP_after_21.07.15/new_control_test/time_series/control_arctic_control_run.csv',index_col=0)
+elif region == '65N':
+    control=pd.read_csv('/home/hanbre/norstore_project/BCKUP_after_21.07.15/new_control_test/time_series/65N_O3_control_run.csv',index_col=0)
+elif region == '65S':
+    control=pd.read_csv('/home/hanbre/norstore_project/BCKUP_after_21.07.15/new_control_test/time_series/65S_O3_control_run.csv',index_col=0)
 elif region == '70S':
     control=pd.read_csv('/home/hanbre/norstore_project/BCKUP_after_21.07.15/new_control_test/time_series/70S_O3_control_run.csv',index_col=0)
 elif region == '75S':
