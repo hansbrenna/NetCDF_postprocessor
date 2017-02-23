@@ -32,6 +32,7 @@ import matplotlib.colors as colors
 from matplotlib.colors import Normalize
 import re
 import seaborn as sns
+import HB_module.vertical_interpolation as vint
 import HB_module.outsourced as outs
 try:
     import Ngl
@@ -398,7 +399,9 @@ if __name__ == "__main__":
     print(pointvars)
     if args.vertical_interpolation: #interpolate to pressure levels. By default, the same levels as in the original data.
         print('Interpolating...')        
-        v = HB_module.vertical_interpolation.vertical_interpolation(v,v.lev,v.hyam,v.hybm,v.PS,v.P0)
+        plevo=np.array([1000,900,800,600,500,300,200,100,70,50,30,10,7,5,3,1,0.7,0.5,0.3,0.1,0.07,0.05,0.03,0.01,0.007,0.005,0.003,0.001,0.0007,0.0005,0.0003,0.0001])
+        v = vint.vertical_interpolation(v,plevo,data.hyam,data.hybm,data.PS,data.P0)
+        yax = v.lev
         
     vm1 = v.mean(dim=meanvars)
     

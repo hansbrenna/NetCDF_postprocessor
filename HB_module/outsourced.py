@@ -8,7 +8,7 @@ import os.path
 import sys
 import numpy as np
 import pandas as pd
-import xray
+import xarray
 import re
 
 def parse_time_axis(t,res,verbose=True):
