@@ -18,6 +18,7 @@ from mpl_toolkits.basemap import Basemap, shiftgrid, addcyclic
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from matplotlib.colors import Normalize
+from matplotlib import gridspec
 import re
 import seaborn as sns
 import HB_module.outsourced as outs
@@ -62,7 +63,7 @@ def calculate_total_ozone(ds):
     totO3=O3_t.sum(dim='lev')
     
     totO3DU = totO3/2.1415e-5
-    
+    print('Minimum column ozone value: {}'.format(totO3DU.min()))
     ds2=totO3DU.to_dataset(name='totO3')
     ds3=ds.merge(ds2)
     ds3.totO3.attrs['units']='DU'
@@ -96,6 +97,21 @@ def calculate_increase_in_uv(data):
     dUV = data**(-raf)
     return (dUV-1)*100
    
+def latitude_bands_time_series(data,gw,clabel):
+    dlat = [10.0,30.0,60.0,90.0,180.0]
+    lat0 = -90.0
+    latm = 90.0
+    for dl in dlat:
+        with sns.color_palette('husl',int(180.0/dl)):
+            plt.figure()
+            lat1 = lat0
+            lat2 = 0.0
+            while lat1 < latm:
+                lat2 = lat1+dl    
+                data.sel(lat=slice(lat1,lat2)).reduce(np.average,dim='lat',weights=gw.sel(lat=slice(lat1,lat2))).plot(label='{},{}'.format(lat1,lat2))
+                lat1 = lat2
+            plt.legend()
+            plt.ylabel(clabel)
 
 if __name__ == "__main__":
     sns.set_style('ticks')
@@ -111,6 +127,9 @@ if __name__ == "__main__":
     parser.add_argument('--colorbar','-cb',help='toggle colorbar on',action='store_true')    
     parser.add_argument('--title',help='Set the plot title text',default=False)
     parser.add_argument('--show','-s',help='show the figure',action='store_true')
+    parser.add_argument('--decode_time','-dec_t',help='decode time variable according to CF conventions',action='store_true')
+    parser.add_argument('--cloud_cover','-cc',help='Specify a path to NetCDF file containing a cloud cover field.tells the program to calculate the uv change modified by clouds. Requires uv',default=False)
+    parser.add_argument('--lat_bands_time_series','-ts',help='Tell the program to calculate latitude band time series and plot them in a separate figure. Requires -tl',action='store_true')
     group_abs_on_anoms = parser.add_mutually_exclusive_group()
     group_abs_on_anoms.add_argument('--abs_on_anomalies','-aon',help='Plot absolute field values in black on colormap of anomalies. Requires -ca or -ra options', action='store_true')
     group_abs_on_anoms.add_argument('--hole_on_anomalies','-220',help='Plot the 220 DU contour line on anomaly plot',action='store_true')
@@ -124,9 +143,15 @@ if __name__ == "__main__":
         tl = True
     else:
         tl = False
-        
-    data = xarray.open_dataset(file_id,decode_times=False)
+    if args.decode_time:
+        print('attempting to decode times as datetimes')
+        data = xarray.open_dataset(file_id)
+        print(data.time[0:5])
+    else:
+        data = xarray.open_dataset(file_id,decode_times=False)
     ds3 = calculate_total_ozone(data)
+    
+    gw = data['gw']
     
     if args.abs_on_anomalies or args.hole_on_anomalies:
         assert args.calculate_anomaly or args.calculate_relative_anomaly, 'if -aon or -220 is given either -ca or -ra needs to be set as well'
@@ -142,6 +167,13 @@ if __name__ == "__main__":
         aon = False
         hoa = False
     
+    if args.cloud_cover:
+        assert args.uv_change, 'Must give uv_change flag to use cloud cover'
+        cc_data = xarray.open_dataset(args.cloud_cover,decode_times=False)
+        cc = cc_data['CLDTOT']
+        
+    if args.lat_bands_time_series:
+        assert tl == True, 'Plotting time series for latitude bands requires -tl option'
     
     clabel='Column O3 [DU]'
     colorbar = args.colorbar
@@ -181,8 +213,10 @@ if __name__ == "__main__":
             if args.uv_change:
                 uv_change = calculate_increase_in_uv(tot_O3_anom)
                 var = uv_change
+                if args.cloud_cover:
+                    var = uv_change*cc
                 norm = MidpointNormalize(midpoint=0)
-                clevels = np.array([-40,-20,0,20,40,80,120,160,200,240])#np.linspace(-40,240,8)# np.array([80,90,95,105,120,130,160,200,240,280,320])
+                clevels = np.array([-40,-20,0,20,40,100,160,220,280,340,400])#np.linspace(-40,240,8)# np.array([80,90,95,105,120,130,160,200,240,280,320])
                 clabel='Change in biologically active UV (%)'
     else:
         var = ds3.totO3
@@ -198,6 +232,8 @@ if __name__ == "__main__":
     ######Output image file name parameters:##########
     if args.uv_change:
         extra_info = '_uv'
+        if args.cloud_cover:
+            extra_info = '_uv_cc'
     elif args.calculate_relative_anomaly:
         extra_info = '_ra'
     elif args.calculate_anomaly:
@@ -216,11 +252,19 @@ if __name__ == "__main__":
     if tl == True:
         #sns.set(font_scale=1.5)
 #        clevels = np.linspace(100,460,19)
-        fig_tl = plt.figure()
+        fig_tl = plt.figure(figsize=(10,5))
+        gs = gridspec.GridSpec(2, 1, height_ratios=[50, 1]) 
         var = var.mean(dim='lon')
-        var['time']=np.arange(var.time.shape[0])
+        if args.decode_time == False:
+            var['time']=np.arange(var.time.shape[0])
     #    var.plot.contourf(x='time',y='lat',cmap=cmap)
-        CF = plt.contourf(var.time,var.lat,var.transpose(),levels=clevels,cmap=cmap,norm=norm)
+        if args.decode_time:
+            CF=var.plot.contourf(x='time',y='lat',levels=clevels,cmap=cmap,add_colorbar=False)
+        else:
+            CF = plt.contourf(var.time,var.lat,var.transpose(),levels=clevels,cmap=cmap,norm=norm,extend="max")
+            if args.calculate_anomaly == False and args.calculate_relative_anomaly == False:
+                CS = plt.contour(var.time,var.lat,var.transpose(),np.linspace(220,220,1),colors='k')
+                #plt.clabel(CS,(220),fmt='%1.0f',inline=True)
         if aon: #if absolute on anomalies
             var_aoa = var_aoa.mean(dim='lon')
             var_aoa['time']=np.arange(var_aoa.time.shape[0])
@@ -232,21 +276,28 @@ if __name__ == "__main__":
             CS = plt.contour(var.time,var.lat,var_aoa.transpose(),np.linspace(220,220,1),colors='k')
             plt.clabel(CS,(220),fmt='%1.0f',inline=True)
         else:
-            CS = plt.contour(var.time,var.lat,var.transpose(),np.linspace(220,220,1),colors='k')
+            if args.decode_time:
+                CS=var.plot.contour(x='time',y='lat',levels=np.linspace(220,220,1),colors='k',add_colorbar=False)
+            else:
+                if hoa:
+                    CS = plt.contour(var.time,var.lat,var.transpose(),np.linspace(220,220,1),colors='k')
         if aon:
             plt.clabel(CS,(140,220,300,380,460),fmt='%1.0f',inline=False)
         if colorbar:        
             clb=plt.colorbar(CF) 
             clb.set_label(clabel)#'Column O3 [DU]')
-        text = ['J','A','J','O']
-        locs = np.arange(0,145,3)
-        labels = 12*text
-        plt.xticks(locs,labels)
-        plt.xlim(0,143)
+        if args.decode_time == False:
+            text = ['J','A','J','O']
+            locs = np.arange(0,145,3)
+            labels = 12*text
+            plt.xticks(locs,labels)
+        #plt.xlim(0,143)
         plt.xlabel('Month',fontsize=16)
         plt.ylabel('Latitude',fontsize=16)
         if args.title != False:
             plt.title(args.title,fontsize=18)
+        if args.lat_bands_time_series:
+            latitude_bands_time_series(var,gw,clabel)
         plt.show()
         fig_tl.savefig('{0}{1}{2}{3}_ozone_timelat.png'.format(file_id,extra_info,more_info,cb_info),dpi=300,bbox_inches='tight')
         fig_tl.savefig('{0}{1}{2}{3}_ozone_timelat.svg'.format(file_id,extra_info,more_info,cb_info),dpi=300,bbox_inches='tight')

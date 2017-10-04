@@ -52,6 +52,7 @@ parser.add_argument('--experiment_color','-ec',help='set the color for the exper
 parser.add_argument('--exp_label','-el',help='set the experiment label text')
 parser.add_argument('--extract_months','-em',help="extract certain months. Give numbers as comma separated list (jan=1). Example: 1,2,9,10,11,12",default=False)
 parser.add_argument('--significance_test','-test',help='toggle on statistical significance testing',action='store_true')
+parser.add_argument('--zorder','-z',help='Set the draw order for the time series plotting',default=0)
 
 label_size = 14
 matplotlib.rcParams['xtick.labelsize'] = label_size 
@@ -68,25 +69,27 @@ if args.extract_months != False:
 
 """Read the control file with each year as one column"""
 if region == 'global':
-    control=pd.read_csv('/home/hanbre/norstore_project/BCKUP_after_21.07.15/new_control_test/time_series/global_{}_control_run.csv'.format(var),index_col=0)
+    control=pd.read_csv('/home/hanbre/nird/BCKUP_after_21.07.15/new_control_test/time_series/global_{}_control_run.csv'.format(var),index_col=0)
 elif region == 'antarctic':
-    control=pd.read_csv('/home/hanbre/norstore_project/BCKUP_after_21.07.15/new_control_test/time_series/antarctic_{}_control_run.csv'.format(var),index_col=0)
+    control=pd.read_csv('/home/hanbre/nird/BCKUP_after_21.07.15/new_control_test/time_series/antarctic_{}_control_run.csv'.format(var),index_col=0)
 elif region == 'arctic':
-    control=pd.read_csv('/home/hanbre/norstore_project/BCKUP_after_21.07.15/new_control_test/time_series/control_arctic_control_run.csv',index_col=0)
+    control=pd.read_csv('/home/hanbre/nird/BCKUP_after_21.07.15/new_control_test/time_series/control_arctic_control_run.csv',index_col=0)
 elif region == '65N':
-    control=pd.read_csv('/home/hanbre/norstore_project/BCKUP_after_21.07.15/new_control_test/time_series/65N_O3_control_run.csv',index_col=0)
+    control=pd.read_csv('/home/hanbre/nird/BCKUP_after_21.07.15/new_control_test/time_series/65N_O3_control_run.csv',index_col=0)
 elif region == '65S':
-    control=pd.read_csv('/home/hanbre/norstore_project/BCKUP_after_21.07.15/new_control_test/time_series/65S_O3_control_run.csv',index_col=0)
+    control=pd.read_csv('/home/hanbre/nird/BCKUP_after_21.07.15/new_control_test/time_series/65S_O3_control_run.csv',index_col=0)
 elif region == '70S':
-    control=pd.read_csv('/home/hanbre/norstore_project/BCKUP_after_21.07.15/new_control_test/time_series/70S_O3_control_run.csv',index_col=0)
+    control=pd.read_csv('/home/hanbre/nird/BCKUP_after_21.07.15/new_control_test/time_series/70S_O3_control_run.csv',index_col=0)
 elif region == '75S':
-    control=pd.read_csv('/home/hanbre/norstore_project/BCKUP_after_21.07.15/new_control_test/time_series/75S_O3_control_run.csv',index_col=0)
+    control=pd.read_csv('/home/hanbre/nird/BCKUP_after_21.07.15/new_control_test/time_series/75S_O3_control_run.csv',index_col=0)
 elif region == 'tropics':
-    control=pd.read_csv('/home/hanbre/norstore_project/BCKUP_after_21.07.15/new_control_test/time_series/control_tropics_control_run.csv',index_col=0)
+    control=pd.read_csv('/home/hanbre/nird/BCKUP_after_21.07.15/new_control_test/time_series/control_tropics_control_run.csv',index_col=0)
 elif region == 'nh_extratropics':
-    control=pd.read_csv('/home/hanbre/norstore_project/BCKUP_after_21.07.15/new_control_test/time_series/control_nh_extratropics_control_run.csv',index_col=0)
+    control=pd.read_csv('/home/hanbre/nird/BCKUP_after_21.07.15/new_control_test/time_series/control_nh_extratropics_control_run.csv',index_col=0)
 elif region == 'sh_extratropics':
     control=pd.read_csv('/home/hanbre/norstore_project/BCKUP_after_21.07.15/new_control_test/time_series/control_sh_extratropics_control_run.csv',index_col=0)
+elif region == 'polar_vortex' and args.variable == 'U':
+    control = pd.read_csv('/home/hanbre/nird/BCKUP_after_21.07.15/new_control_test/time_series/control_U5565_U_time_series.csv',index_col=0)
 elif region == 'None':
     control = None
 else:
@@ -98,6 +101,7 @@ experiment=pd.read_csv(FileName,index_col=0)
 if args.extract_months != False:
     experiment = extract_months(experiment,months)
     
+zorder = args.zorder
 
 
 if region != 'None':
@@ -117,8 +121,8 @@ if region != 'None':
     std=control120.std(axis=1)
     ma = control120.mean(axis=1)
     if args.extract_months == False:
-        plt.plot(ma,color=colors['darkblue'],label='ctr')
-        plt.fill_between(std.index,ma-2*std, ma+2*std, color=colors['deepblue'], alpha=0.5)
+        plt.plot(ma,zorder=0,color=colors['darkblue'],label='ctr')
+        plt.fill_between(std.index,ma-2*std, ma+2*std,zorder=0,color=colors['deepblue'], alpha=0.5)
     else:
         dummy_t = np.arange(1,len(control120.index)+1)
         plt.plot(dummy_t,ma,color=colors['darkblue'],label='ctr')
@@ -126,7 +130,7 @@ if region != 'None':
 #control120.plot()
 
 
-plt.hold('on')
+#plt.hold('on')
 
 #plt.savefig('tot_glob_O3_natural_variability_m_std.png',dpi=100,bbox_inches='tight')
 #plt.hold('on')
@@ -136,8 +140,8 @@ max_e=experiment.max(axis=1)
 min_e=experiment.min(axis=1)
 me = experiment.mean(axis=1)
 if args.extract_months == False:
-    plt.plot(me,color=colors['dark{}'.format(args.experiment_color)],label=args.exp_label)
-    plt.fill_between(std_e.index,me-2*std_e, me+2*std_e, color=colors['deep{}'.format(args.experiment_color)], alpha=0.5)
+    plt.plot(me,zorder=zorder,color=colors['dark{}'.format(args.experiment_color)],label=args.exp_label)
+    plt.fill_between(std_e.index,me-2*std_e, me+2*std_e,zorder=zorder, color=colors['deep{}'.format(args.experiment_color)], alpha=0.5)
 else:
     dummy_t = np.arange(1,len(experiment.index)+1)
     plt.plot(dummy_t,me,color=colors['dark{}'.format(args.experiment_color)],label=args.exp_label)
@@ -156,6 +160,6 @@ if args.noSave == False:
     plt.legend(fontsize=14,loc='lower right')
     plt.savefig('{}_vs_ctr_time_series_with_uncertainty.svg'.format(fname),bbox_inches='tight')
     print('{}_vs_ctr_time_series_with_uncertainty.svg was saved'.format(fname))
-#    plt.figure()
+    plt.figure()
     plt.semilogy(test.index,test.pvalue,test.index,test.r_sum_pvalue,test.index,np.zeros(test.index.shape)+0.05)
-    #plt.show()
+    plt.show()

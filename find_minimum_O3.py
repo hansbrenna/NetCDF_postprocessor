@@ -12,10 +12,12 @@ import pandas as pd
 import xarray as xr
 import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib import gridspec
 import seaborn as sns
 
 sns.set_style('ticks')
-matplotlib.rcParams['xtick.labelsize']=14
+sns.set_palette(sns.color_palette('husl',8))
+matplotlib.rcParams['xtick.labelsize']=12
 matplotlib.rcParams['ytick.labelsize']=14
 
 def calculate_total_ozone(ds):
@@ -70,7 +72,7 @@ with open(input_file,'r') as file_in:
         min_tot_O3.append(min_tot_O3_temp.values)
 
 min_tot_O3_array = np.array(min_tot_O3).transpose()
-dummy_time = np.arange(1,len(min_tot_O3_temp)+1)
+dummy_time = np.arange(0,len(min_tot_O3_temp))
 minimums = pd.DataFrame(min_tot_O3_array,index=dummy_time)
 minimums.to_csv('{}_time_series.csv'.format(in_name))
 list_min = np.array_split(minimums,12)
@@ -85,15 +87,28 @@ for e in list_yearly_mins:
     masked_df=masked_df.append(e)
     
 fig = plt.figure(figsize=(10,5))
-plt.plot(masked_df,'o')
-text = ['J','A','J','O']
-locs = np.arange(1,145,3)
+gs = gridspec.GridSpec(2, 1, height_ratios=[50, 1]) 
+ax = fig.add_subplot(gs[0])
+ax.plot(masked_df,'o')
+text = ['Ja','A','Ju','O']
+locs = np.arange(0,144,3)
 labels = 12*text
-plt.xlim(1,144)
-plt.xticks(locs,labels)
-plt.legend(['full.1','full.2','full.3','full.4','full.5'],loc='lower right',fontsize=14)
-plt.xlabel('Month',fontsize=16)
+ax.set_xlim(0,143)
+ax.set_xticks(locs)
+ax.set_xticklabels(labels)
+plt.legend(['halog+SAD.1','halog+SAD.2','halog+SAD.3','halog+SAD.4','halog+SAD.5','halog+SAD.6','halog+SAD.7','halog+SAD.8'],loc='lower right',fontsize=12)
+#plt.xlabel('Month',fontsize=16)
 plt.ylabel('Column O3 [DU]',fontsize=16)
+plt.title('Minimum column O3 each post-eruption year 60S-90S',fontsize=18)
+ax2 = fig.add_subplot(gs[1])
+ax2.yaxis.set_visible(False)
+ax2.spines['top'].set_visible(False)
+ax2.spines['right'].set_visible(False)
+ax2.spines['left'].set_visible(False)
+ax2.set_xlim(0,143)
+ax2.set_xticks(np.arange(0,144,12))#[0,1,2,3,4,5,6,7,8,9,10,11,12])
+ax2.set_xticklabels([1,2,3,4,5,6,7,8,9,10,11,12,''],fontsize=14)
+ax2.set_xlabel('Years since eruption. Key: Ja=January, A=April, Ju=July,O=October',fontsize=12)
 fig.savefig('full_yearly_antarctic_minimum_totO3.png',figsize=(10,4),dpi=300,bbox_inches='tight')
 plt.show()
 

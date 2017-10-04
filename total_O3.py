@@ -8,7 +8,7 @@ from __future__ import print_function
 import sys
 import numpy as np
 import pandas as pd
-import xray
+import xarray as xray
 import matplotlib.pyplot as plt
 import seaborn as sns
 import HB_module.outsourced
@@ -30,7 +30,7 @@ pastelpurple = (0.8156862745098039, 0.7333333333333333, 1.0)
 darkpurple = (0.4627450980392157, 0.0, 0.6313725490196078)
 deeppurple = (0.5058823529411764, 0.4470588235294118, 0.6980392156862745)
 
-with open('files/tot_O3_arctic_list.dat','r') as file_in:
+with open('files/full_global.dat','r') as file_in:
     c = 0
     #sns.set_palette('dark')
     for line in file_in:

@@ -32,10 +32,10 @@ import matplotlib.colors as colors
 from matplotlib.colors import Normalize
 import re
 import seaborn as sns
-import HB_module.vertical_interpolation as vint
 import HB_module.outsourced as outs
 try:
     import Ngl
+    import HB_module.vertical_interpolation as vint
 except ImportError:
     print('Library Ngl is not found on the system. Interpolation will not work. do not use -int option.')
 
@@ -165,7 +165,7 @@ def plotter(vm,x,y,norm,cmap,logscale,show,figs):
         else:
             yname = y.name
 #        clb.set_ticklabels(c)
-        plt.title('{0} as function of {1} and {2}'.format(var,x.name,yname),fontsize='18')
+        plt.title('{0}'.format(var),fontsize='18')
     elif y.name == 'time':
         print('functionality not yet implemented. Use the x-axis for time')
         sys.exit()        
@@ -399,7 +399,8 @@ if __name__ == "__main__":
     print(pointvars)
     if args.vertical_interpolation: #interpolate to pressure levels. By default, the same levels as in the original data.
         print('Interpolating...')        
-        plevo=np.array([1000,900,800,600,500,300,200,100,70,50,30,10,7,5,3,1,0.7,0.5,0.3,0.1,0.07,0.05,0.03,0.01,0.007,0.005,0.003,0.001,0.0007,0.0005,0.0003,0.0001])
+        plevo=np.array([1000,900,800,600,500,300,200,100,70,50,30,10,7,5,3,1])
+        #plevo = v.lev
         v = vint.vertical_interpolation(v,plevo,data.hyam,data.hybm,data.PS,data.P0)
         yax = v.lev
         

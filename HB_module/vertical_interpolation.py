@@ -21,6 +21,6 @@ def vertical_interpolation(da,lev_n, hya, hyb, PS, P0):
     dummy = np.empty(shape=[len(da.time),nlev,len(da.lat),len(da.lon)])
     time = da.time; lat = da.lat; lon = da.lon;
     dan = xr.DataArray(dummy,coords=[time, lev_n, lat, lon],dims=da.dims)
-    dan.values = Ngl.vinth2p(da,hya,hyb,lev_n,PS,1,P0,1,False)
-    return dan    
+    da.values = Ngl.vinth2p(da,hya,hyb,lev_n,PS,1,P0,1,False)
+    return da    
     #Ngl.vinth2p call signature array = Ngl.vinth2p(datai, hbcofa, hbcofb, plevo, psfc, intyp, p0, ii, kxtrp)

@@ -77,4 +77,4 @@ with open(input_file,'r') as file_in:
             
         print('hi!')
         
-        df.to_csv('{}_time_series.csv'.format(in_name))
+        df.to_csv('{}_{}_time_series.csv'.format(in_name,var))

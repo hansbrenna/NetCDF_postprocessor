@@ -1,0 +1,43 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Aug 25 11:53:33 2017
+
+@author: hanbre
+"""
+from __future__ import print_function
+import numpy as np
+import pandas as pd
+import xarray as xr
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+mod_data = xr.open_dataset('/home/hanbre/norstore_project/BCKUP_after_21.07.15/aCAVA_experiment/full_forcing/ensemble_average_h0_files/anomalies/f1850w.aCAVA_full.ens.anom.cam.h0.0001-0012.netradfluxt.hormean.nc',decode_times=False)
+
+lw = mod_data['FLNT']
+sw = mod_data['FSNT']
+
+net = lw+sw
+
+data_aod = xr.open_dataset('/home/hanbre/norstore_project/BCKUP_after_21.07.15/aCAVA_experiment/full_forcing/ensemble_average_h0_files/f1850w.aCAVA_full.ens.cam.h0.0001-0012.AOD.hormean.nc',decode_times=False)
+
+aod = data_aod['AEROD_v']
+
+pRF=-24*aod
+
+O3RF_data=pd.read_csv('/home/hanbre/norstore_project/RF_calculations/vert_and_hor_remap_nc_files/global_mean_O3_RF_CICERO.csv',index_col=0,names=['RF'])
+
+
+O3RF_data=O3RF_data.to_xarray()
+O3RF_data=O3RF_data.rename(dict(index='time'))
+O3RF = O3RF_data['RF']/1000.0
+net_calc=pRF+O3RF.values
+
+
+
+plt.figure()
+plt.hold('on')
+#net.rolling(time=12,center=True).mean().plot()
+#pRF.rolling(time=12,center=True).mean().plot()
+#O3RF.rolling(time=12,center=True).mean().plot()
+#net_calc.rolling(time=12,center=True).mean().plot()
