@@ -19,10 +19,10 @@ from scipy.stats import ttest_ind,ranksums
 normality_check = False    
 
 control = xr.open_dataset('/home/hanbre/nird/BCKUP_after_21.07.15/new_control_test/f1850w.new_control.cam.h0.DJFe.nc',decode_times=False)
-experiment = xr.open_dataset('/home/hanbre/nird/BCKUP_after_21.07.15/aCAVA_experiment/PV_dynamics_significant/f1850w.aCAVA_full.ense.cam.h0.U.DJF1.nc')
+experiment = xr.open_dataset('/home/hanbre/nird/BCKUP_after_21.07.15/aCAVA_experiment/PV_dynamics_significant/f1850w.aCAVA_full.ense.cam.h0.UT.DJF1.nc')
 
-cU = control['U']
-eU = experiment['U']
+cU = control['T']
+eU = experiment['T']
 
 cUm = cU.mean(dim = ['time','lon'])
 dummy = cUm.mean(dim = 'record')
@@ -46,8 +46,8 @@ for la in lat:
             cnormality.loc[dict(lat=la,lev=le)] = cnorm_temp[1]
             enorm_temp = stats.shapiro(eUm.loc[dict(lat=la,lev=le)])
             enormality.loc[dict(lat=la,lev=le)] = enorm_temp[1]
-#        r_temp = (stats.ranksums(cUm.loc[dict(lat=la,lev=le)],eUm.loc[dict(lat=la,lev=le)]))
-        r_temp = ttest_ind(cUm.loc[dict(lat=la,lev=le)],eUm.loc[dict(lat=la,lev=le)],equal_var=False)
+        r_temp = (stats.ranksums(cUm.loc[dict(lat=la,lev=le)],eUm.loc[dict(lat=la,lev=le)]))
+#        r_temp = ttest_ind(cUm.loc[dict(lat=la,lev=le)],eUm.loc[dict(lat=la,lev=le)],equal_var=False)
         r.loc[dict(lat=la,lev=le)] = r_temp.pvalue
 #        print(eUm.loc[dict(lat=la,lev=le)].values)
 #        it = it + 1

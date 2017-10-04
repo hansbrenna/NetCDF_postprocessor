@@ -24,7 +24,7 @@ import seaborn as sns
 import HB_module.outsourced as outs
 
 sns.set_style('ticks')
-matplotlib.rcParams['xtick.labelsize']=14
+matplotlib.rcParams['xtick.labelsize']=12
 matplotlib.rcParams['ytick.labelsize']=14
 
 class MidpointNormalize(Normalize):
@@ -216,7 +216,10 @@ if __name__ == "__main__":
                 if args.cloud_cover:
                     var = uv_change*cc
                 norm = MidpointNormalize(midpoint=0)
-                clevels = np.array([-40,-20,0,20,40,100,160,220,280,340,400])#np.linspace(-40,240,8)# np.array([80,90,95,105,120,130,160,200,240,280,320])
+                cmap=colors.ListedColormap(sns.diverging_palette(220, 20,n=20))
+                clevels = np.zeros(12)
+                clevels[0]=-20
+                clevels[1:] = np.linspace(0,400,11)#np.array([-40,-20,-5,5,20,40,100,160,220,280,340,400])#np.linspace(-40,240,8)# np.array([80,90,95,105,120,130,160,200,240,280,320])
                 clabel='Change in biologically active UV (%)'
     else:
         var = ds3.totO3
@@ -254,50 +257,82 @@ if __name__ == "__main__":
 #        clevels = np.linspace(100,460,19)
         fig_tl = plt.figure(figsize=(10,5))
         gs = gridspec.GridSpec(2, 1, height_ratios=[50, 1]) 
+        ax1 = fig_tl.add_subplot(gs[0])
+        ax2 = fig_tl.add_subplot(gs[1]) #Subplot to hold secondary x-axis
         var = var.mean(dim='lon')
         if args.decode_time == False:
             var['time']=np.arange(var.time.shape[0])
     #    var.plot.contourf(x='time',y='lat',cmap=cmap)
         if args.decode_time:
-            CF=var.plot.contourf(x='time',y='lat',levels=clevels,cmap=cmap,add_colorbar=False)
+            CF=var.plot.contourf(x='time',y='lat',ax=ax1,levels=clevels,cmap=cmap,add_colorbar=False)
         else:
-            CF = plt.contourf(var.time,var.lat,var.transpose(),levels=clevels,cmap=cmap,norm=norm,extend="max")
+            CF = ax1.contourf(var.time,var.lat,var.transpose(),levels=clevels,cmap=cmap,norm=norm,extend="max")
             if args.calculate_anomaly == False and args.calculate_relative_anomaly == False:
-                CS = plt.contour(var.time,var.lat,var.transpose(),np.linspace(220,220,1),colors='k')
+                CS = ax1.contour(var.time,var.lat,var.transpose(),np.linspace(220,220,1),colors='k')
                 #plt.clabel(CS,(220),fmt='%1.0f',inline=True)
         if aon: #if absolute on anomalies
             var_aoa = var_aoa.mean(dim='lon')
             var_aoa['time']=np.arange(var_aoa.time.shape[0])
-            CS = plt.contour(var.time,var.lat,var_aoa.transpose(),np.linspace(100,460,10),colors='k')
+            CS = ax1.contour(var.time,var.lat,var_aoa.transpose(),np.linspace(100,460,10),colors='k')
             for c in CS.collections:
                 c.set_linestyle('solid')
                 c.set_linewidth(1)
         elif hoa: #if 220 isoline on anomalies
-            CS = plt.contour(var.time,var.lat,var_aoa.transpose(),np.linspace(220,220,1),colors='k')
-            plt.clabel(CS,(220),fmt='%1.0f',inline=True)
+            var_aoa = var_aoa.mean(dim='lon')
+            var_aoa['time']=np.arange(var_aoa.time.shape[0])
+            CS = ax1.contour(var.time,var.lat,var_aoa.transpose(),levels = np.array([220]),colors='k')
+            #plt.clabel(CS,(220),fmt='%1.0f',inline=True)
         else:
             if args.decode_time:
-                CS=var.plot.contour(x='time',y='lat',levels=np.linspace(220,220,1),colors='k',add_colorbar=False)
+                CS=var.plot.contour(x='time',y='lat',ax=ax1,levels=np.linspace(220,220,1),colors='k',add_colorbar=False)
             else:
                 if hoa:
-                    CS = plt.contour(var.time,var.lat,var.transpose(),np.linspace(220,220,1),colors='k')
+                    CS = ax1.contour(var.time,var.lat,var.transpose(),np.linspace(220,220,1),colors='k')
         if aon:
             plt.clabel(CS,(140,220,300,380,460),fmt='%1.0f',inline=False)
-        if colorbar:        
-            clb=plt.colorbar(CF) 
-            clb.set_label(clabel)#'Column O3 [DU]')
+#        if colorbar:        
+#            clb=plt.colorbar(CF,ax=ax3) 
+#            clb.set_label(clabel)#'Column O3 [DU]')
         if args.decode_time == False:
-            text = ['J','A','J','O']
-            locs = np.arange(0,145,3)
+            text = ['Ja','A','Ju','O']
+            locs = np.arange(0,144,3)
             labels = 12*text
-            plt.xticks(locs,labels)
+            #plt.xticks(locs,labels,ax=ax1)
+#            ax.set_xlim(0,143)
+            ax1.set_xticks(locs)
+            ax1.set_xticklabels(labels)
         #plt.xlim(0,143)
-        plt.xlabel('Month',fontsize=16)
-        plt.ylabel('Latitude',fontsize=16)
+#        ax1.set_xlabel('Month',fontsize=16)
+        ax1.set_ylabel('Latitude',fontsize=16)
         if args.title != False:
-            plt.title(args.title,fontsize=18)
+            ax1.title(args.title,fontsize=18)
         if args.lat_bands_time_series:
             latitude_bands_time_series(var,gw,clabel)
+            
+        #*********************************************************************#
+        #Create secondary x-axis to show the years
+        #*********************************************************************#
+        ax2.yaxis.set_visible(False)
+        ax2.spines['top'].set_visible(False)
+        ax2.spines['right'].set_visible(False)
+        ax2.spines['left'].set_visible(False)
+        ax2.set_xlim(0,143)
+        ax2.set_xticks(np.arange(0,144,12))#[0,1,2,3,4,5,6,7,8,9,10,11,12])
+        ax2.set_xticklabels([1,2,3,4,5,6,7,8,9,10,11,12,''],fontsize=14)
+        ax2.set_xlabel('Years since eruption. Key: Ja=January, A=April, Ju=July,O=October',fontsize=12)
+        #*********************************************************************#
+        #END
+        #*********************************************************************#
+        
+        #*********************************************************************#
+        #Create colorbar in separate subplot
+        #*********************************************************************#
+        if colorbar:
+#        ax3.axis('off')
+            fig_tl.subplots_adjust(right=0.8)
+            ax3 = fig_tl.add_axes([0.82, 0.195, 0.015, 0.69])#Axes to hold colorbar
+            fig_tl.colorbar(CF, cax=ax3)
+        
         plt.show()
         fig_tl.savefig('{0}{1}{2}{3}_ozone_timelat.png'.format(file_id,extra_info,more_info,cb_info),dpi=300,bbox_inches='tight')
         fig_tl.savefig('{0}{1}{2}{3}_ozone_timelat.svg'.format(file_id,extra_info,more_info,cb_info),dpi=300,bbox_inches='tight')
