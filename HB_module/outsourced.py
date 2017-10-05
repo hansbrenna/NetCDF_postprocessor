@@ -139,3 +139,8 @@ def clb_labels(var,ppm,ppb,ppt):
         cl = '{}'.format(var)
     return cl
     #clabel(CS,inline=1,fontsize=8)
+    
+def gaussian_weights():
+    data = xarray.open_dataset('/home/hanbre/uio_home/GitHub/NetCDF_postprocessor/HB_module/gw.nc')
+    gw = data['gw']
+    return gw

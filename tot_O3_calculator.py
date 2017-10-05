@@ -103,7 +103,7 @@ def latitude_bands_time_series(data,gw,clabel):
     latm = 90.0
     for dl in dlat:
         with sns.color_palette('husl',int(180.0/dl)):
-            plt.figure()
+            fig = plt.figure()
             lat1 = lat0
             lat2 = 0.0
             while lat1 < latm:
@@ -112,6 +112,8 @@ def latitude_bands_time_series(data,gw,clabel):
                 lat1 = lat2
             plt.legend()
             plt.ylabel(clabel)
+            if dl == 60.0:
+                fig.savefig('UV_time_series_{}.png'.format(dl),bbox_inches='tight',dpi=300)
 
 if __name__ == "__main__":
     sns.set_style('ticks')
@@ -123,13 +125,18 @@ if __name__ == "__main__":
     group_anoms.add_argument('--calculate_anomaly','-ca', help='set mode to calculate absolute anomalies',action='store_true')
     group_anoms.add_argument('--calculate_relative_anomaly','-ra', help='set mode to calculate relative anomalies',action='store_true')
     parser.add_argument('--climatology_file','-cf',help='path to climatology file to use as anomaly baseline')
-    parser.add_argument('--uv_change','-uv',help='tell the program to calculate the change in ultraviolet radiation. Requires -ra option',action='store_true')
     parser.add_argument('--colorbar','-cb',help='toggle colorbar on',action='store_true')    
     parser.add_argument('--title',help='Set the plot title text',default=False)
     parser.add_argument('--show','-s',help='show the figure',action='store_true')
     parser.add_argument('--decode_time','-dec_t',help='decode time variable according to CF conventions',action='store_true')
-    parser.add_argument('--cloud_cover','-cc',help='Specify a path to NetCDF file containing a cloud cover field.tells the program to calculate the uv change modified by clouds. Requires uv',default=False)
     parser.add_argument('--lat_bands_time_series','-ts',help='Tell the program to calculate latitude band time series and plot them in a separate figure. Requires -tl',action='store_true')
+    ultraviolet = parser.add_argument_group()
+    ultraviolet.add_argument('--uv_change','-uv',help='tell the program to calculate the change in ultraviolet radiation. Requires -ra option',action='store_true')
+    ultraviolet.add_argument('--cloud_cover','-cc',help='Specify a path to NetCDF file containing a cloud cover field.tells the program to calculate the uv change modified by clouds. Requires uv',default=False)
+    time_lat = parser.add_argument_group()
+    time_lat.add_argument('--figsize', help='Override default time-lat figure size. Tuple (x,y)',default=False)
+    time_lat.add_argument('--x_max',help='Specify max xlim for time-lat figure',default=False)
+    time_lat.add_argument('--no_secondary_x_axis','-nsecx',help='Turn off secondary x-axis in time-lat figure',action='store_true')
     group_abs_on_anoms = parser.add_mutually_exclusive_group()
     group_abs_on_anoms.add_argument('--abs_on_anomalies','-aon',help='Plot absolute field values in black on colormap of anomalies. Requires -ca or -ra options', action='store_true')
     group_abs_on_anoms.add_argument('--hole_on_anomalies','-220',help='Plot the 220 DU contour line on anomaly plot',action='store_true')
@@ -139,6 +146,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     file_id = args.FileName
+    
+    if args.figsize:
+        figsize = args.figsize.strip('(').strip(')').split(',')
+        figsize = [float(s) for s in figsize]
+    else:
+        figsize = None
+        
     if args.time_lat:
         tl = True
     else:
@@ -151,7 +165,7 @@ if __name__ == "__main__":
         data = xarray.open_dataset(file_id,decode_times=False)
     ds3 = calculate_total_ozone(data)
     
-    gw = data['gw']
+    gw = outs.gaussian_weights()
     
     if args.abs_on_anomalies or args.hole_on_anomalies:
         assert args.calculate_anomaly or args.calculate_relative_anomaly, 'if -aon or -220 is given either -ca or -ra needs to be set as well'
@@ -255,10 +269,13 @@ if __name__ == "__main__":
     if tl == True:
         #sns.set(font_scale=1.5)
 #        clevels = np.linspace(100,460,19)
-        fig_tl = plt.figure(figsize=(10,5))
-        gs = gridspec.GridSpec(2, 1, height_ratios=[50, 1]) 
+        if args.figsize:
+            fig_tl = plt.figure(figsize=figsize)
+        else:
+            fig_tl = plt.figure(figsize=(10,5))
+        gs = gridspec.GridSpec(2, 2, height_ratios=[100, 1],width_ratios=[30,1]) 
         ax1 = fig_tl.add_subplot(gs[0])
-        ax2 = fig_tl.add_subplot(gs[1]) #Subplot to hold secondary x-axis
+        ax2 = fig_tl.add_subplot(gs[2]) #Subplot to hold secondary x-axis
         var = var.mean(dim='lon')
         if args.decode_time == False:
             var['time']=np.arange(var.time.shape[0])
@@ -303,23 +320,32 @@ if __name__ == "__main__":
             ax1.set_xticklabels(labels)
         #plt.xlim(0,143)
 #        ax1.set_xlabel('Month',fontsize=16)
-        ax1.set_ylabel('Latitude',fontsize=16)
+        ax1.set_ylabel('Latitude',fontsize=14)
         if args.title != False:
-            ax1.title(args.title,fontsize=18)
+            ax1.set_title(args.title,fontsize=12)
         if args.lat_bands_time_series:
             latitude_bands_time_series(var,gw,clabel)
             
         #*********************************************************************#
         #Create secondary x-axis to show the years
         #*********************************************************************#
-        ax2.yaxis.set_visible(False)
-        ax2.spines['top'].set_visible(False)
-        ax2.spines['right'].set_visible(False)
-        ax2.spines['left'].set_visible(False)
-        ax2.set_xlim(0,143)
-        ax2.set_xticks(np.arange(0,144,12))#[0,1,2,3,4,5,6,7,8,9,10,11,12])
-        ax2.set_xticklabels([1,2,3,4,5,6,7,8,9,10,11,12,''],fontsize=14)
-        ax2.set_xlabel('Years since eruption. Key: Ja=January, A=April, Ju=July,O=October',fontsize=12)
+        if args.no_secondary_x_axis:
+            ax2.yaxis.set_visible(False)
+            ax2.xaxis.set_visible(False)
+            ax2.spines['top'].set_visible(False)
+            ax2.spines['right'].set_visible(False)
+            ax2.spines['left'].set_visible(False)
+            ax2.spines['bottom'].set_visible(False)
+            ax1.set_xlabel('Key: Ja=January, A=April, Ju=July,O=October',labelpad=15,fontsize=12)
+        else:
+            ax2.yaxis.set_visible(False)
+            ax2.spines['top'].set_visible(False)
+            ax2.spines['right'].set_visible(False)
+            ax2.spines['left'].set_visible(False)
+            ax2.set_xlim(0,143)
+            ax2.set_xticks(np.arange(0,144,12))#[0,1,2,3,4,5,6,7,8,9,10,11,12])
+            ax2.set_xticklabels([1,2,3,4,5,6,7,8,9,10,11,12,''],fontsize=14)
+            ax2.set_xlabel('Years since eruption. Key: Ja=January, A=April, Ju=July,O=October',fontsize=12)
         #*********************************************************************#
         #END
         #*********************************************************************#
@@ -329,10 +355,14 @@ if __name__ == "__main__":
         #*********************************************************************#
         if colorbar:
 #        ax3.axis('off')
-            fig_tl.subplots_adjust(right=0.8)
-            ax3 = fig_tl.add_axes([0.82, 0.195, 0.015, 0.69])#Axes to hold colorbar
-            fig_tl.colorbar(CF, cax=ax3)
+            #fig_tl.subplots_adjust(right=0.8)
+            ax3 = fig_tl.add_subplot(gs[1])#fig_tl.add_axes([0.82, 0.195, 0.015, 0.69])#Axes to hold colorbar
+            clb = fig_tl.colorbar(CF, cax=ax3)
+            clb.ax.tick_params(labelsize=10)
         
+        if args.x_max != False:
+            ax1.set_xlim(right=int(args.x_max))
+        plt.tight_layout(w_pad=0.1)
         plt.show()
         fig_tl.savefig('{0}{1}{2}{3}_ozone_timelat.png'.format(file_id,extra_info,more_info,cb_info),dpi=300,bbox_inches='tight')
         fig_tl.savefig('{0}{1}{2}{3}_ozone_timelat.svg'.format(file_id,extra_info,more_info,cb_info),dpi=300,bbox_inches='tight')
